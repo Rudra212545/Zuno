@@ -25,11 +25,25 @@ const createUserResponse = (user) => {
 // @route   POST /api/users/register
 // @access  Public
 export const registerUser = asyncHandler(async (req, res,next) => {
+
   const errors = validationResult(req);
-  console.log(errors.array());
+
+  // console.log("Raw Errors:", errors); // Debug
+  // console.log("Array Errors:", errors.array()); // Debug
+
   if (!errors.isEmpty()) {
-    // Pass the array of errors directly to ApiError
-    return next(new ApiError(400, 'Validation failed', errors.array()));
+    // Create a map of field: message for clarity
+    const formattedErrors = {};
+    errors.array().forEach(err => {
+      // Only show first message per field
+      if (!formattedErrors[err.path]) {
+        formattedErrors[err.path] = err.msg;
+        // console.log(formattedErrors);
+      }
+    });
+
+    // Send a structured error
+    return next(new ApiError(400, "Validation failed", formattedErrors));
   }
 
   const {

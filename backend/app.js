@@ -28,6 +28,16 @@ app.use("/api/v1/users",userRouter);
 
 
 
-
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || 500;
+  
+    res.status(statusCode).json({
+      success: err.success || false,
+      message: err.message || 'Something went wrong',
+      errors: err.errors || null,
+      field: err.field || null
+    });
+  });
+  
 
 export { app } 

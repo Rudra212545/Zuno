@@ -12,7 +12,8 @@ class ApiError extends Error {
       this.success = false;
   
       // Include validation errors (e.g. from express-validator)
-      this.errors = Array.isArray(errors) ? errors : [];
+      this.errors = errors || [];
+
   
       // Optionally indicate the field that caused the error (e.g. email, username)
       this.field = field || null;
