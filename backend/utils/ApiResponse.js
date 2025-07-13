@@ -1,14 +1,21 @@
-class ApiResponse{
-    constructor(
-        statusCode,
-        data,
-        message = "Success"
-    ){
-        this.statusCode = statusCode
-        this.data = data
-        this.message = message
-        this.success = statusCode < 400 
+class ApiResponse {
+    constructor(statusCode, data = {}, message = "Success") {
+      this.statusCode = statusCode;
+      this.success = statusCode < 400;
+      this.message = message;
+      this.data = data;
     }
-}
-
-export { ApiResponse }
+  
+    // Optional: for debugging or logging
+    toJSON() {
+      return {
+        success: this.success,
+        statusCode: this.statusCode,
+        message: this.message,
+        data: this.data
+      };
+    }
+  }
+  
+  export { ApiResponse };
+  
