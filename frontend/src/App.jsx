@@ -1,35 +1,40 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import Navbar from './components/Navbar';
+import Hero from './components/Hero';
+import FeatureSection from './components/FeatureSection';
+import Footer from './components/Footer';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1 >Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="min-h-screen bg-[#0f0f1c] text-[#e4e4e7] font-[Outfit] overflow-hidden">
+      <Navbar />
+      <Hero />
+      <FeatureSection
+        title="Create an Invite-Only Place"
+        description="Zuno servers are organized into topic-based channels..."
+        image="/assets/invite-only.svg"
+      />
+      <FeatureSection
+        title="Where hanging out is easy"
+        description="Voice channels make it easy to chat casually..."
+        image="/assets/hangout.svg"
+        reverse
+      />
+      <FeatureSection
+        title="Customizable Profiles"
+        description="Express yourself with unique avatars, custom statuses, and personal bios to stand out in the community."
+        image="/assets/custom-profile.svg"
+      />
+
+      <FeatureSection
+        title="Integrations & Bots"
+        description="Enhance your server with powerful bots and third-party integrations for music, games, and automation."
+        image="/assets/integrations.svg"
+        reverse
+      />
+      <Footer />
+    </div>
+  );
 }
 
-export default App
+export default App;

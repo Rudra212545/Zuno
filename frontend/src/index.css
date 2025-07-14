@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@layer utilities {
+    @keyframes bounce-rotate {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg);
+      }
+      30% {
+        transform: translateY(-50px) rotate(360deg) scale(2);
+      }
+      60% {
+        transform: translateY(0) rotate(0deg);
+      }
+    }
+  
+    .animate-bounce-rotate {
+      animation: bounce-rotate 5s ease-in-out infinite;
+    }
+  }
