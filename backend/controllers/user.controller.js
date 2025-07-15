@@ -4,12 +4,9 @@ import { validationResult } from 'express-validator';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
-<<<<<<< HEAD
-=======
 import { admin } from "../utils/firebase.js";
 import bcrypt from 'bcrypt';
 
->>>>>>> b321080 (pushed)
 
 // Helper: Generate tokens
 const generateTokens = (user) => {
@@ -47,11 +44,8 @@ export const registerUser = asyncHandler(async (req, res,next) => {
         // console.log(formattedErrors);
       }
     });
-<<<<<<< HEAD
 
-=======
     console.log(formattedErrors);
->>>>>>> b321080 (pushed)
     // Send a structured error
     return next(new ApiError(400, "Validation failed", formattedErrors));
   }
@@ -60,10 +54,7 @@ export const registerUser = asyncHandler(async (req, res,next) => {
     username,
     email,
     password,
-<<<<<<< HEAD
     displayName,
-=======
->>>>>>> b321080 (pushed)
     language = 'en',
     timezone = 'UTC'
   } = req.body;
@@ -89,15 +80,6 @@ export const registerUser = asyncHandler(async (req, res,next) => {
     username: username.toLowerCase(),
     email: email.toLowerCase(),
     password,
-<<<<<<< HEAD
-    displayName,
-    language,
-    timezone,
-    avatar: {
-      url: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=6366f1`,
-      publicId: null
-    }
-=======
     language,
     timezone,
     avatar: {
@@ -105,7 +87,6 @@ export const registerUser = asyncHandler(async (req, res,next) => {
       publicId: null
     }
     
->>>>>>> b321080 (pushed)
   });
 
   const savedUser = await newUser.save();
@@ -126,8 +107,6 @@ export const registerUser = asyncHandler(async (req, res,next) => {
     }, 'User registered successfully')
   );
 });
-<<<<<<< HEAD
-=======
 
 export const googleAuthController = asyncHandler(async (req, res, next) => {
   const { idToken } = req.body;
@@ -308,4 +287,3 @@ export const googleLogin = asyncHandler(async (req, res, next) => {
     next(err);
   }
 });
->>>>>>> b321080 (pushed)

@@ -20,14 +20,11 @@ const validateUserRegistration = [
     .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
 
-<<<<<<< HEAD
   body('displayName')
     .trim()
     .isLength({ min: 1, max: 50 }).withMessage('Display name must be between 1 and 50 characters')
     .escape(),
 
-=======
->>>>>>> b321080 (pushed)
   body('bio')
     .optional()
     .trim()
