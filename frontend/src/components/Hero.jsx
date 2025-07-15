@@ -3,18 +3,37 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeadset } from '@fortawesome/free-solid-svg-icons';
+<<<<<<< HEAD
+=======
+import { Link } from "react-router-dom";
+
+>>>>>>> b321080 (pushed)
 
 
 
 const Hero = () => (
+<<<<<<< HEAD
   <section className="bg-gradient-to-rt from-[#0f0f1c] via-[#1c1c2e] to-[#2e2e3e] text-[#e4e4e7] py-40 px-6 text-center relative overflow-hidden h-[500px]">
+=======
+  <section className="bg-gradient-to-rt from-[#0f0f1c] via-[#1c1c2e] to-[#2e2e3e] text-[#e4e4e7] py-40 px-6 text-center relative overflow-hidden min-h-1/2">
+
+>>>>>>> b321080 (pushed)
 
 
 
     <div className="max-w-4xl mx-auto z-10 relative ">
+<<<<<<< HEAD
     <div className="flex justify-center mb-5">
     <p className='text-9xl  animate-bounce-rotate'><FontAwesomeIcon icon={faHeadset} /></p>
     </div>  
+=======
+   {/* Animated Logo */}
+   <div className="flex justify-center mb-4">
+            <div className="bg-gradient-to-r from-[#6366F1] to-[#9333EA] rounded-full p-6 shadow-3xl animate-bounce">
+              <FontAwesomeIcon icon={faHeadset} className="text-9xl text-white" />
+            </div>
+          </div>
+>>>>>>> b321080 (pushed)
     <h1
   className="
     text-4xl md:text-5xl font-extrabold mb-4
@@ -38,12 +57,27 @@ const Hero = () => (
   Jump into voice, video, and text with the people who matter. ZUNO makes every moment count.
 </p>
 
+<<<<<<< HEAD
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <button className="bg-gradient-to-r from-[#6366F1] to-[#9333EA] text-white hover:scale-105  px-6 py-3 rounded-full font-bold hover:bg-gray-200 flex items-center al gap-3">
           TRY IT NOW 
           <p> <ArrowRight /> </p>
         </button>
       </div>
+=======
+    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full mt-6">
+      <Link
+      to={"/login"}
+       className="w-full sm:w-auto bg-gradient-to-r from-[#6366F1] to-[#9333EA] text-white px-6 py-3 rounded-full font-bold flex items-center justify-center gap-3 transition-all duration-300">
+        TRY IT NOW
+        <ArrowRight />
+      </Link>
+    </div>
+
+
+
+
+>>>>>>> b321080 (pushed)
     </div>
 
 

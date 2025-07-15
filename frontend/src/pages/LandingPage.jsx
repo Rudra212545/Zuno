@@ -1,11 +1,10 @@
 import React from 'react';
-<<<<<<< HEAD
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import FeatureSection from './components/FeatureSection';
-import Footer from './components/Footer';
+import Navbar from "../components/Navbar"
+import Hero from '../components/Hero';
+import FeatureSection from '../components/FeatureSection';
+import Footer from '../components/Footer';
 
-function App() {
+function LandingPage() {
   return (
     <div className="min-h-screen bg-[#0f0f1c] text-[#e4e4e7] font-[Outfit] overflow-hidden">
       <Navbar />
@@ -35,26 +34,7 @@ function App() {
       />
       <Footer />
     </div>
-=======
-import LandingPage from './pages/LandingPage';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-
-function App() {
-  return (
-    <Router>
-      {/* <Navbar/> */}
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-    </Routes>
-  </Router>
->>>>>>> b321080 (pushed)
   );
 }
 
-export default App;
+export default LandingPage;

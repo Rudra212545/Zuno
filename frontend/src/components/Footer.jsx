@@ -9,6 +9,10 @@ const Footer = () => (
     <h4 className="text-white font-semibold mb-2">Company</h4>
     <ul>
       <li className=" hover:text-[#5eead4] hover:scale-105 transition-all duration-200 cursor-pointer">About</li>
+<<<<<<< HEAD
+=======
+      <li className=" hover:text-[#5eead4] hover:scale-105 transition-all duration-200 cursor-pointer">Features</li>
+>>>>>>> b321080 (pushed)
     </ul>
   </div>
   <div>
@@ -33,7 +37,13 @@ const Footer = () => (
     <div className="my-8 text-xs text-[#a1a1aa]">
       &copy; 2025 Zuno Inc. All rights reserved.
     </div>
+<<<<<<< HEAD
     <h1 className="text-9xl font-extrabold tracking-widest mt-5  bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">ZUNO</h1>
+=======
+    <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-extrabold tracking-widest mt-5 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+  ZUNO
+</h1>
+>>>>>>> b321080 (pushed)
   </footer>
 );
 
