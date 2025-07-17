@@ -10,11 +10,15 @@ import { FcGoogle } from "react-icons/fc";
 import { auth, provider } from "../firebase/firebase.js";
 import { signInWithPopup } from "firebase/auth";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 
 const SignupPage = () => {
   const recaptchaRef = useRef(null);
   const [isHuman, setIsHuman] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  let navigate = useNavigate();
+
 
   const {
     register,
@@ -53,7 +57,8 @@ const SignupPage = () => {
         password: data.password,
       });
 
-      alert("Sign up successful!");
+      // alert("Sign up successful!");
+      navigate("/home");
       reset(); // Reset form on success
       recaptchaRef.current?.reset(); // Reset reCAPTCHA
       setIsHuman(false);
@@ -83,6 +88,7 @@ const SignupPage = () => {
       );
 
       console.log("Google signup/login successful:", response.data);
+      navigate("/home");
       return response.data;
     } catch (error) {
       console.error("Google Sign-In error:", error);

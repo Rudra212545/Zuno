@@ -287,3 +287,9 @@ export const googleLogin = asyncHandler(async (req, res, next) => {
     next(err);
   }
 });
+
+export const logoutUser = asyncHandler(async (req, res) => {
+  return res.status(200).json({
+    message: "User logged out (client should delete token)"
+  });
+});

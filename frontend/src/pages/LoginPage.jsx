@@ -11,12 +11,14 @@ import { auth, provider } from "../firebase/firebase.js";
 import { signInWithPopup } from "firebase/auth";
 import axios from "axios";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
   const recaptchaRef = useRef(null);
   const [isHuman, setIsHuman] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  let navigate = useNavigate();
 
   const {
     register,
@@ -79,11 +81,11 @@ const LoginPage = () => {
       // Check if the request was successful (status 200-299)
       if (response.status >= 200 && response.status < 300) {
         // Handle different possible response structures
-        const responseData = response.data;
+        const responseData = response.data.data || {}; // 👈 because actual token is in response.data.data
+
+        const token = responseData.token;
+        const user = responseData.user;
         
-        // Check for token in various possible locations
-        const token = responseData.token || responseData.accessToken || responseData.authToken || responseData.jwt;
-        const user = responseData.user || responseData.userData || responseData.profile;
         
         if (token) {
           // Store authentication data
@@ -102,10 +104,13 @@ const LoginPage = () => {
           setIsHuman(false);
           
           // Show success message
-          alert("Login successful!");
+          // alert("Login successful!");
+          console.log("Redirecting to /home with token:", localStorage.getItem('token'));
+          navigate("/home");
+          
           
           // Redirect to dashboard or home page
-          window.location.href = "/dashboard";
+          // window.location.href = "/dashboard";
         } else {
           // Success response but no token found
           console.log('Success response but no token found. Response structure:', responseData);
@@ -185,7 +190,8 @@ const LoginPage = () => {
         localStorage.setItem('token', accessToken);
         localStorage.setItem('user', JSON.stringify(response.data?.data?.user));
   
-        alert("Signed in successfully!");
+        // alert("Signed in successfully!");
+        navigate("/home");
         // window.location.href = "/dashboard";
       } else {
         setError("Google Sign-In failed. Please try again.");

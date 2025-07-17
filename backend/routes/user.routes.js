@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { googleLogin, loginUser, registerUser } from '../controllers/user.controller.js';
+import { googleLogin, loginUser, registerUser, logoutUser } from '../controllers/user.controller.js';
 import { validateUserRegistration } from '../middlewares/validationMiddleware.js';
 import { googleAuthController } from "../controllers/user.controller.js";
 
@@ -24,6 +24,9 @@ router.post("/google-auth", googleAuthController);
 router.post("/login",loginUser)
 // Login With Google 
 router.post("/google-login",googleLogin)
+
+// Logout User 
+router.post("logout",logoutUser);
 
 
 
