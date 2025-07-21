@@ -48,32 +48,7 @@ function LandingPage() {
               image="/assets/invite-only.svg"
             />
           </div>
-          
-          <div className="transform hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/20">
-            <FeatureSection
-              title="Where hanging out is easy"
-              description="Voice channels make it easy to chat casually with friends, host events, or collaborate on projects with crystal-clear audio quality."
-              image="/assets/hangout.svg"
-              reverse
-            />
-          </div>
-          
-          <div className="transform hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/20">
-            <FeatureSection
-              title="Customizable Profiles"
-              description="Express yourself with unique avatars, custom statuses, and personal bios to stand out in the community and showcase your personality."
-              image="/assets/custom-profile.svg"
-            />
-          </div>
 
-          <div className="transform hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/20">
-            <FeatureSection
-              title="Integrations & Bots"
-              description="Enhance your server with powerful bots and third-party integrations for music, games, moderation, and automation to create the perfect experience."
-              image="/assets/integrations.svg"
-              reverse
-            />
-          </div>
         </div>
 
         <div className="animate-fadeInUp delay-500">
