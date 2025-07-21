@@ -20,6 +20,8 @@ const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [token, setToken] = useState(null);
+
   let navigate = useNavigate();
 
   const {
@@ -87,6 +89,9 @@ const LoginPage = () => {
 
         const token = responseData.token;
         const user = responseData.user;
+        const receivedToken = response.data.data.token;
+        setToken(receivedToken); // <-- Update React state
+        console.log(`Token Saved:`,receivedToken);
         
         
         if (token) {
@@ -467,6 +472,7 @@ const LoginPage = () => {
           </div>
         </div>
       </div>
+     
       <Footer />
     </div>
   );

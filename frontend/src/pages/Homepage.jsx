@@ -5,7 +5,9 @@ import ServersSidebar from '../components/homepage/ServersSidebar';
 import ChannelsSidebar from '../components/homepage/ChannelsSidebar';
 import ChatArea from '../components/homepage/ChatArea';
 import LogoutModal from '../components/homepage/LogoutModal';
-import {useNavigate} from "react-router-dom"
+import AddServerModal from '../components/homepage/AddServerModal';
+import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 
 
 function Homepage() {
@@ -18,68 +20,43 @@ function Homepage() {
   const [showChannels, setShowChannels] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showAddServerModal, setShowAddServerModal] = useState(false);
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const logoutConfirmRef = useRef(null);
-  
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      user: 'Sarah_Dev',
-      content: 'Hey everyone! Just pushed the new feature to staging 🚀 The performance improvements are incredible!',
-      timestamp: 'Today at 2:42 PM',
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      role: 'admin'
-    },
-    {
-      id: 2,
-      user: 'Mike_Design',
-      content: 'Looks absolutely amazing! 🎨 The new UI components are really clean and the animations are so smooth',
-      timestamp: 'Today at 2:45 PM',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      role: 'moderator'
-    },
-    {
-      id: 3,
-      user: 'Alex_PM',
-      content: 'Perfect timing! 📅 We can demo this in tomorrow\'s client meeting. This will definitely impress them!',
-      timestamp: 'Today at 2:48 PM',
-      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      role: 'member'
-    },
-    {
-      id: 4,
-      user: 'Emma_QA',
-      content: 'I\'ll run through all the test cases this evening and report any issues 🧪 So far everything looks solid!',
-      timestamp: 'Today at 2:52 PM',
-      avatar: 'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      role: 'member'
-    },
-    {
-      id: 5,
-      user: 'DevBot',
-      content: '🤖 Automated deployment to production completed successfully! Build #247 is now live.',
-      timestamp: 'Today at 3:15 PM',
-      avatar: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      role: 'bot'
-    }
-  ]);
 
-  const servers = [
-    { id: 1, name: 'Dev Team', icon: '🚀', active: true, notifications: 0 },
-    { id: 2, name: 'Design Hub', icon: '🎨', notifications: 3 },
-    { id: 3, name: 'Gaming Squad', icon: '🎮', notifications: 12 },
-    { id: 4, name: 'Music Lounge', icon: '🎵', notifications: 0 },
-    { id: 5, name: 'Study Group', icon: '📚', notifications: 1 }
-  ];
+  const [servers, setServers] = useState([]);
+  useEffect(() => {
+    const fetchServers = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/v1/server/');
+        setServers(response.data); // axios puts response body in data
+      } catch (error) {
+        console.error("Failed to fetch servers", error);
+      }
+    };
+    fetchServers();
+  }, []);
+
+  const handleCreateServer = async (serverData) => {
+    try {
+      const response = await axios.post('http://localhost:3000/api/v1/server/create', serverData, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      setServers(prev => [...prev, response.data]);
+    } catch (err) {
+      console.error("Create server error:", err);
+    }
+  };
 
   const notifications = [
     {
       id: 1,
       type: 'friend_request',
       user: 'Alex_Developer',
-      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
+      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
       message: 'sent you a friend request',
       time: '2 minutes ago',
       unread: true
@@ -88,7 +65,7 @@ function Homepage() {
       id: 2,
       type: 'mention',
       user: 'Sarah_Dev',
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
+      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg',
       message: 'mentioned you in #dev-updates',
       content: 'Hey @YourUsername, can you review the new feature?',
       time: '15 minutes ago',
@@ -98,7 +75,7 @@ function Homepage() {
       id: 3,
       type: 'server_invite',
       user: 'Mike_Design',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
+      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg',
       message: 'invited you to Design Hub server',
       time: '1 hour ago',
       unread: false
@@ -107,7 +84,7 @@ function Homepage() {
       id: 4,
       type: 'event',
       user: 'Team Calendar',
-      avatar: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
+      avatar: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg',
       message: 'Daily standup meeting in 30 minutes',
       time: '2 hours ago',
       unread: false
@@ -132,6 +109,49 @@ function Homepage() {
     { id: 8, name: 'Music Lounge', type: 'voice', users: ['Alex_PM'] }
   ];
 
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      user: 'Sarah_Dev',
+      content: 'Hey everyone! Just pushed the new feature to staging 🚀',
+      timestamp: 'Today at 2:42 PM',
+      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg',
+      role: 'admin'
+    },
+    {
+      id: 2,
+      user: 'Mike_Design',
+      content: 'Looks absolutely amazing! 🎨',
+      timestamp: 'Today at 2:45 PM',
+      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg',
+      role: 'moderator'
+    },
+    {
+      id: 3,
+      user: 'Alex_PM',
+      content: 'Perfect timing for client meeting 📅',
+      timestamp: 'Today at 2:48 PM',
+      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
+      role: 'member'
+    },
+    {
+      id: 4,
+      user: 'Emma_QA',
+      content: 'Running test cases 🧪 So far so good!',
+      timestamp: 'Today at 2:52 PM',
+      avatar: 'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg',
+      role: 'member'
+    },
+    {
+      id: 5,
+      user: 'DevBot',
+      content: '🤖 Deployment to production completed. Build #247 is live.',
+      timestamp: 'Today at 3:15 PM',
+      avatar: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg',
+      role: 'bot'
+    }
+  ]);
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (messageInput.trim()) {
@@ -140,7 +160,7 @@ function Homepage() {
         user: 'You',
         content: messageInput,
         timestamp: 'Today at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
+        avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
         role: 'member'
       };
       setMessages([...messages, newMessage]);
@@ -154,23 +174,12 @@ function Homepage() {
   };
 
   const confirmLogout = () => {
-    // Clear any stored user data
     localStorage.removeItem('token');
     localStorage.removeItem('userData');
     sessionStorage.clear();
-    
-    // Reset all state
     setIsLoggedIn(false);
     setShowLogoutConfirm(false);
-    setShowProfileMenu(false);
-    setShowNotifications(false);
-    setShowMobileMenu(false);
-    setShowChannels(false);
-    
-    // In a real app, you would redirect to login page
-    // For demo purposes, we'll show a logout message
-    navigate("/login")
-    // Reset to logged in state for demo
+    navigate("/login");
     setIsLoggedIn(true);
   };
 
@@ -198,7 +207,6 @@ function Homepage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile menus when switching to desktop
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -211,7 +219,6 @@ function Homepage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Show logout screen if user is not logged in
   if (!isLoggedIn) {
     return <LogoutScreen setIsLoggedIn={setIsLoggedIn} />;
   }
@@ -247,7 +254,10 @@ function Homepage() {
         mobileMenuRef={mobileMenuRef}
       />
 
-      <ServersSidebar servers={servers} />
+      <ServersSidebar
+        servers={servers}
+        onOpenAddServer={() => setShowAddServerModal(true)}
+      />
 
       <ChannelsSidebar
         currentChannel={currentChannel}
@@ -269,6 +279,12 @@ function Homepage() {
         confirmLogout={confirmLogout}
         cancelLogout={cancelLogout}
         logoutConfirmRef={logoutConfirmRef}
+      />
+
+      <AddServerModal
+        isOpen={showAddServerModal}
+        onClose={() => setShowAddServerModal(false)}
+        onCreate={handleCreateServer}
       />
     </div>
   );
