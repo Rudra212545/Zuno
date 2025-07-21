@@ -11,12 +11,16 @@ import { auth, provider } from "../firebase/firebase.js";
 import { signInWithPopup } from "firebase/auth";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // Using react-icons for eye icons
+
 
 
 const SignupPage = () => {
   const recaptchaRef = useRef(null);
   const [isHuman, setIsHuman] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   let navigate = useNavigate();
 
 
@@ -273,53 +277,77 @@ const SignupPage = () => {
                 )}
               </div>
 
-              {/* Password Input */}
-              <div className="flex flex-col gap-1 group/password">
-                <input
-                  type="password"
-                  placeholder="Password"
-                  {...register("password", {
-                    required: "Password is required",
-                    minLength: {
-                      value: 8,
-                      message: "Password must be at least 8 characters long"
-                    },
-                    pattern: {
-                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-                      message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
-                    }
-                  })}
-                  className={`p-3 rounded-md bg-[#2e2e3e]/80 backdrop-blur-sm border transition-all duration-300 ${
-                    errors.password 
-                      ? "border-red-500 focus:border-red-500 focus:shadow-red-500/25" 
-                      : "border-white/10 focus:border-purple-500 group-hover/password:border-purple-400/50 focus:shadow-purple-500/25"
-                  } focus:outline-none focus:shadow-lg hover:bg-[#2e2e3e]/90 placeholder-gray-400`}
-                />
-                {errors.password && (
-                  <span className="text-red-400 text-xs animate-fadeInDown">{errors.password.message}</span>
-                )}
-              </div>
+           {/* Password Input */}
+      <div className="flex flex-col gap-1 group/password relative">
+        <input
+          type={showPassword ? "text" : "password"}
+          placeholder="Password"
+          {...register("password", {
+            required: "Password is required",
+            minLength: {
+              value: 8,
+              message: "Password must be at least 8 characters long",
+            },
+            pattern: {
+              value:
+                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+              message:
+                "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+            },
+          })}
+          className={`p-3 rounded-md bg-[#2e2e3e]/80 backdrop-blur-sm border transition-all duration-300 ${
+            errors.password
+              ? "border-red-500 focus:border-red-500 focus:shadow-red-500/25"
+              : "border-white/10 focus:border-purple-500 group-hover/password:border-purple-400/50 focus:shadow-purple-500/25"
+          } focus:outline-none focus:shadow-lg hover:bg-[#2e2e3e]/90 placeholder-gray-400 pr-10`}
+        />
+        {/* Eye icon button */}
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-500"
+          tabIndex={-1} // Prevent button from tab focusing if you want
+        >
+          {showPassword ? <FaEyeSlash /> : <FaEye />}
+        </button>
+        {errors.password && (
+          <span className="text-red-400 text-xs animate-fadeInDown">
+            {errors.password.message}
+          </span>
+        )}
+      </div>
 
-              {/* Confirm Password Input */}
-              <div className="flex flex-col gap-1 group/confirm">
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  {...register("confirmPassword", {
-                    required: "Please confirm your password",
-                    validate: (value) => 
-                      value === password || "Passwords do not match"
-                  })}
-                  className={`p-3 rounded-md bg-[#2e2e3e]/80 backdrop-blur-sm border transition-all duration-300 ${
-                    errors.confirmPassword 
-                      ? "border-red-500 focus:border-red-500 focus:shadow-red-500/25" 
-                      : "border-white/10 focus:border-purple-500 group-hover/confirm:border-purple-400/50 focus:shadow-purple-500/25"
-                  } focus:outline-none focus:shadow-lg hover:bg-[#2e2e3e]/90 placeholder-gray-400`}
-                />
-                {errors.confirmPassword && (
-                  <span className="text-red-400 text-xs animate-fadeInDown">{errors.confirmPassword.message}</span>
-                )}
-              </div>
+      {/* Confirm Password Input */}
+      <div className="flex flex-col gap-1 group/confirm relative mt-4">
+        <input
+          type={showConfirm ? "text" : "password"}
+          placeholder="Confirm Password"
+          {...register("confirmPassword", {
+            required: "Please confirm your password",
+            validate: (value) =>
+              value === password || "Passwords do not match",
+          })}
+          className={`p-3 rounded-md bg-[#2e2e3e]/80 backdrop-blur-sm border transition-all duration-300 ${
+            errors.confirmPassword
+              ? "border-red-500 focus:border-red-500 focus:shadow-red-500/25"
+              : "border-white/10 focus:border-purple-500 group-hover/confirm:border-purple-400/50 focus:shadow-purple-500/25"
+          } focus:outline-none focus:shadow-lg hover:bg-[#2e2e3e]/90 placeholder-gray-400 pr-10`}
+        />
+        {/* Eye icon button */}
+        <button
+          type="button"
+          onClick={() => setShowConfirm((prev) => !prev)}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-500"
+          tabIndex={-1} // Prevent button from tab focusing if you want
+        >
+          {showConfirm ? <FaEyeSlash /> : <FaEye />}
+        </button>
+        {errors.confirmPassword && (
+          <span className="text-red-400 text-xs animate-fadeInDown">
+            {errors.confirmPassword.message}
+          </span>
+        )}
+      </div>
 
              {/* Google reCAPTCHA */}
             <div className="flex justify-center group/recaptcha z-10">

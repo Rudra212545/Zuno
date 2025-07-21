@@ -12,12 +12,14 @@ import { signInWithPopup } from "firebase/auth";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // Using react-icons for eye icons
 
 const LoginPage = () => {
   const recaptchaRef = useRef(null);
   const [isHuman, setIsHuman] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   let navigate = useNavigate();
 
   const {
@@ -361,28 +363,39 @@ const LoginPage = () => {
               </div>
 
               {/* Password Field */}
-              <div className="flex flex-col gap-1 group/password">
-                <input
-                  type="password"
-                  placeholder="Password"
-                  {...register("password", {
-                    required: "Password is required",
-                    minLength: {
-                      value: 8,
-                      message: "Password must be at least 8 characters long"
-                    }
-                  })}
-                  className={`p-3 rounded-md bg-[#2e2e3e]/80 backdrop-blur-sm border transition-all duration-300 ${
-                    errors.password
-                      ? "border-red-500 focus:border-red-500 focus:shadow-red-500/25"
-                      : "border-white/10 focus:border-purple-500 group-hover/password:border-purple-400/50 focus:shadow-purple-500/25"
-                  } focus:outline-none focus:shadow-lg hover:bg-[#2e2e3e]/90 placeholder-gray-400`}
-                  disabled={isSubmitting}
-                />
-                {errors.password && (
-                  <span className="text-red-400 text-xs">{errors.password.message}</span>
-                )}
-              </div>
+              <div className="flex flex-col align-middle gap-1 group/password relative">
+      <input
+        type={showPassword ? "text" : "password"}
+        placeholder="Password"
+        {...register("password", {
+          required: "Password is required",
+          minLength: {
+            value: 8,
+            message: "Password must be at least 8 characters long",
+          },
+        })}
+        className={`p-3 rounded-md bg-[#2e2e3e]/80 backdrop-blur-sm border transition-all duration-300 ${
+          errors.password
+            ? "border-red-500 focus:border-red-500 focus:shadow-red-500/25"
+            : "border-white/10 focus:border-purple-500 group-hover/password:border-purple-400/50 focus:shadow-purple-500/25"
+        } focus:outline-none focus:shadow-lg hover:bg-[#2e2e3e]/90 placeholder-gray-400 pr-10`} // Add right padding for icon
+        disabled={isSubmitting}
+      />
+      
+      {/* Eye icon button */}
+      <button
+        type="button"
+        onClick={() => setShowPassword((prev) => !prev)}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-500"
+        tabIndex={-1} // Prevent button from tab focusing if you want
+      >
+        {showPassword ? <FaEyeSlash /> : <FaEye />}
+      </button>
+
+      {errors.password && (
+        <span className="text-red-400 text-xs">{errors.password.message}</span>
+      )}
+    </div>
 
               {/* reCAPTCHA Box */}
               <div className="flex justify-center group/recaptcha z-10">
