@@ -14,8 +14,10 @@ cloudinary.v2.config({
 export const createServer = async (req, res) => {
   try {
     const { name } = req.body;
-    const userId = req.user?.id; // Make sure req.user exists from auth middleware
+    const userId = req.user?._id;
     const file = req.file;
+    // console.log("Request body:", req.body.name );
+    // console.log("Authenticated user:", req.user);
 
     if (!name || !userId) {
       return res.status(400).json({ message: 'Server name and user ID are required.' });
@@ -25,15 +27,23 @@ export const createServer = async (req, res) => {
 
     // 🔼 Upload image to Cloudinary if file is present
     if (file) {
-      const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      try {
+        const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+        const result = await cloudinary.v2.uploader.upload(base64Image, {
+          folder: 'zuno/servers',
+          public_id: `icon_${uuidv4()}`,
+        });
+        iconUrl = result.secure_url;
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+      }
+    } else {
+      // 🪄 Fallback to auto-generated icon from UI Avatars
+      const encodedName = encodeURIComponent(name);
+      iconUrl = `https://ui-avatars.com/api/?name=${encodedName}&background=6366F1&color=fff&bold=true`;
 
-      const result = await cloudinary.v2.uploader.upload(base64Image, {
-        folder: 'zuno/servers',
-        public_id: `icon_${uuidv4()}`,
-      });
-
-      iconUrl = result.secure_url;
     }
+    
 
     // 📦 Create default text & voice channels
     const generalText = new Channel({ name: 'general', type: 'text', isPrivate: false });
@@ -43,6 +53,7 @@ export const createServer = async (req, res) => {
     await generalVoice.save();
 
     // 🛠️ Create the server
+    // console.log("Final iconUrl before saving server:", iconUrl);
     const server = new Server({
       name,
       iconUrl: iconUrl,

@@ -39,18 +39,16 @@ function Homepage() {
     fetchServers();
   }, []);
 
-  const handleCreateServer = async (serverData) => {
-    try {
-      const response = await axios.post('http://localhost:3000/api/v1/server/create', serverData, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      setServers(prev => [...prev, response.data]);
-    } catch (err) {
-      console.error("Create server error:", err);
-    }
+  const handleCreateServer = (serverData) => {
+    // console.log('Server created successfully:', serverData);
+  
+    setServers(prev => {
+      const updated = [...prev, serverData];
+      // console.log('Updated servers list:', updated);
+      return updated;
+    });
   };
-
+  
   const notifications = [
     {
       id: 1,
@@ -61,34 +59,7 @@ function Homepage() {
       time: '2 minutes ago',
       unread: true
     },
-    {
-      id: 2,
-      type: 'mention',
-      user: 'Sarah_Dev',
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg',
-      message: 'mentioned you in #dev-updates',
-      content: 'Hey @YourUsername, can you review the new feature?',
-      time: '15 minutes ago',
-      unread: true
-    },
-    {
-      id: 3,
-      type: 'server_invite',
-      user: 'Mike_Design',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg',
-      message: 'invited you to Design Hub server',
-      time: '1 hour ago',
-      unread: false
-    },
-    {
-      id: 4,
-      type: 'event',
-      user: 'Team Calendar',
-      avatar: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg',
-      message: 'Daily standup meeting in 30 minutes',
-      time: '2 hours ago',
-      unread: false
-    }
+
   ];
 
   const unreadNotifications = notifications.filter(n => n.unread).length;
@@ -255,6 +226,7 @@ function Homepage() {
       />
 
       <ServersSidebar
+      className = ""
         servers={servers}
         onOpenAddServer={() => setShowAddServerModal(true)}
       />

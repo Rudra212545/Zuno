@@ -82,7 +82,7 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
     }
     
     const token = localStorage.getItem('token');
-  console.log('Using token:', token);
+  // console.log('Using token:', token);
 
     try {
       const response = await axios.post('http://localhost:3000/api/v1/server/create', formData, {
@@ -92,7 +92,8 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
         },
       });
   
-      const createdServer = response.data;
+      const createdServer = response.data.server;
+      console.log('Created server:', response.data.server);
       onCreate(createdServer); // pass newly created server to parent or update UI
       setServerName('');
       setIconFile(null);

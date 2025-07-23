@@ -1,7 +1,7 @@
 // middleware/auth.js
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
+const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 export const verifyToken = (req, res, next) => {
   try {
@@ -19,10 +19,10 @@ export const verifyToken = (req, res, next) => {
 
     // Attach user info (e.g. id) to req object
     req.user = {
-      id: decoded.id, // or decoded.userId depending on your token payload
-      email: decoded.email, // optional
-      // other user info as needed
+      _id: decoded._id, // ✅ Use _id as per your token payload
+      email: decoded.email,
     };
+    
 
     next();
   } catch (error) {

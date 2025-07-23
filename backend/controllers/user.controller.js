@@ -54,7 +54,6 @@ export const registerUser = asyncHandler(async (req, res,next) => {
     username,
     email,
     password,
-    displayName,
     language = 'en',
     timezone = 'UTC'
   } = req.body;
@@ -192,10 +191,10 @@ export const loginUser = asyncHandler(async (req, res) => {
   // 3. Generate JWT token
   const token = jwt.sign(
     { 
-      id: user._id,
+      _id: user._id,
       email: user.email 
     }, 
-    process.env.JWT_SECRET, 
+    process.env.ACCESS_TOKEN_SECRET, 
     {
       expiresIn: "7d",
     }
