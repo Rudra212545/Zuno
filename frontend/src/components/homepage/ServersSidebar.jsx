@@ -1,8 +1,8 @@
 import React from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 
-const ServersSidebar = ({ servers, onOpenAddServer }) => {
-  console.log("Servers data:", servers);
+const ServersSidebar = ({ servers, onOpenAddServer,onSelectServer, onSelectDirectMessages }) => {
+  // console.log("Servers data:", servers);
   return (
     <div className="hidden md:flex w-20 bg-gradient-to-b from-[#0f0f1c] via-[#1c1c2e] to-[#2e2e3e] flex-col items-center py-6 space-y-3 border-r border-white/10 mt-14 shadow-2xl overflow-y-auto overflow-x-hidden relative z-50">
       {/* Enhanced animated background elements */}
@@ -31,7 +31,17 @@ const ServersSidebar = ({ servers, onOpenAddServer }) => {
       </div>
 
       {/* Home/Direct Messages */}
-      <div className="relative group z-10">
+      <div className="relative group z-10"
+      onClick={() => {
+        console.log('Direct Message clicked');
+        if (onSelectDirectMessages) {
+          console.log('Function exists — calling now.');
+          onSelectDirectMessages();
+        } else {
+          console.log('Function does NOT exist.');
+        }
+      }}
+      >
         {/* Glow effect behind icon */}
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/30 via-purple-600/30 to-pink-500/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110"></div>
         
@@ -68,7 +78,11 @@ const ServersSidebar = ({ servers, onOpenAddServer }) => {
       
       {/* Server Icons */}
       {servers.map((server, index) => (
-        <div key={server.id} className="relative group z-10">
+       <div
+       key={server.id}
+       className="relative group z-10"
+       onClick={() => onSelectServer(server)}
+     >
           {/* Glow effect behind server icon */}
           <div className={`absolute inset-0 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110 ${
             server.active 

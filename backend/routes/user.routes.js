@@ -1,8 +1,9 @@
 import express from 'express';
 
-import { googleLogin, loginUser, registerUser, logoutUser } from '../controllers/user.controller.js';
+import { googleLogin, loginUser, registerUser, logoutUser, getUserProfile } from '../controllers/user.controller.js';
 import { validateUserRegistration } from '../middlewares/validationMiddleware.js';
 import { googleAuthController } from "../controllers/user.controller.js";
+import { verifyToken } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -27,6 +28,9 @@ router.post("/google-login",googleLogin)
 
 // Logout User 
 router.post("logout",logoutUser);
+
+// Get user info 
+router.get('/avatar', verifyToken, getUserProfile);
 
 
 

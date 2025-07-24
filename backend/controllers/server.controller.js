@@ -80,3 +80,24 @@ export const getAllServers = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch servers" });
   }
 };
+
+export const getServerInfo = async(req,res)=>{
+  try {
+    const { id } = req.params;
+    const serverInfo = await Server.findOne(id)
+
+    if(!serverInfo){
+      return res.status(404).json({ message: 'Server info not found' });
+    }
+    
+    res.json({
+      serverName: serverInfo.name,
+      serverIconUrl: serverInfo.iconUrl,
+    });
+
+
+  } catch (error) {
+    console.error('Error fetching server info:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

@@ -21,6 +21,9 @@ function Homepage() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showAddServerModal, setShowAddServerModal] = useState(false);
+  const [selectedServer, setSelectedServer] = useState(null);
+  const [isDirectMessagesSelected, setIsDirectMessagesSelected] =useState(true);
+
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
   const mobileMenuRef = useRef(null);
@@ -194,9 +197,24 @@ function Homepage() {
     return <LogoutScreen setIsLoggedIn={setIsLoggedIn} />;
   }
 
+  // Called when a server is clicked
+const handleSelectServer = (server) => {
+  setSelectedServer(server);
+  setIsDirectMessagesSelected(false); // Unselect direct messages
+};
+
+// Called when Direct Messages is clicked
+const handleSelectDirectMessages = () => {
+  setSelectedServer(null);
+  setIsDirectMessagesSelected(true);
+};
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white overflow-hidden">
       <TopNavigation
+        selectedServer={selectedServer}
+        isDirectMessagesSelected={isDirectMessagesSelected}
+        onSelectDirectMessages={handleSelectDirectMessages} 
         showNotifications={showNotifications}
         setShowNotifications={setShowNotifications}
         showProfileMenu={showProfileMenu}
@@ -226,10 +244,12 @@ function Homepage() {
       />
 
       <ServersSidebar
-      className = ""
         servers={servers}
         onOpenAddServer={() => setShowAddServerModal(true)}
+        onSelectServer={handleSelectServer}        // updated handler
+        onSelectDirectMessages={handleSelectDirectMessages}  // new prop
       />
+
 
       <ChannelsSidebar
         currentChannel={currentChannel}

@@ -292,3 +292,31 @@ export const logoutUser = asyncHandler(async (req, res) => {
     message: "User logged out (client should delete token)"
   });
 });
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;  // <-- from auth middleware
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId).select('username avatar');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const profileImageUrl = user.avatar?.url || null;
+    const usernameFirstLetter = user.username?.charAt(0).toUpperCase() || null;
+
+    res.json({
+      username: user.username,
+      profileImageUrl,
+      usernameFirstLetter,
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
