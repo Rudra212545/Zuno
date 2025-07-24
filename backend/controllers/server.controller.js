@@ -92,7 +92,7 @@ export const getAllServers = async (req, res) => {
 export const getServerInfo = async(req,res)=>{
   try {
     const { id } = req.params;
-    const serverInfo = await Server.findOne(id)
+    const serverInfo = await Server.findOne({ _id: id })
 
     if(!serverInfo){
       return res.status(404).json({ message: 'Server info not found' });
@@ -106,6 +106,25 @@ export const getServerInfo = async(req,res)=>{
 
   } catch (error) {
     console.error('Error fetching server info:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getChannelsByServerId = async (req, res) => {
+  try {
+    const serverId = req.params.id;
+
+    // Find the server and populate the 'channels' field with actual channel docs
+    const server = await Server.findById(serverId).populate('channels');
+
+    if (!server) {
+      return res.status(404).json({ message: 'Server not found' });
+    }
+
+    // server.channels now contains full channel documents
+    res.json(server.channels);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };

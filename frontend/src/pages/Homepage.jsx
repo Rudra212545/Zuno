@@ -21,40 +21,53 @@ function Homepage() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showAddServerModal, setShowAddServerModal] = useState(false);
-  const [selectedServer, setSelectedServer] = useState(null);
   const [isDirectMessagesSelected, setIsDirectMessagesSelected] =useState(true);
-
+  
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const logoutConfirmRef = useRef(null);
 
   const [servers, setServers] = useState([]);
+  const [user, setUser] = useState(null);
+  const [selectedServer, setSelectedServer] = useState(null);
+  const [channels, setChannels] = useState([]);
+
   useEffect(() => {
-    const fetchServers = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+  
+    const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          console.error("No auth token found");
-          return;
-        }
+        const [userRes, serverRes] = await Promise.all([
+          axios.get('http://localhost:3000/api/v1/users/avatar', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get('http://localhost:3000/api/v1/server/', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
   
-        const response = await axios.get('http://localhost:3000/api/v1/server/', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        setUser(userRes.data);
   
-        console.log('API servers response:', response.data);
-        // Adjust here depending on response shape
-        setServers(Array.isArray(response.data) ? response.data : response.data.servers || []);
+        const serversData = Array.isArray(serverRes.data)
+          ? serverRes.data
+          : serverRes.data.servers || [];
+  
+        setServers(serversData);
+  
+        // ❌ Don't select a server or fetch channels yet
+        setSelectedServer(null);
+        setChannels([]);
       } catch (error) {
-        console.error("Failed to fetch servers", error);
+        console.error('Error fetching data:', error);
       }
     };
   
-    fetchServers();
+    fetchData();
   }, []);
+  
+  
   
 
   const handleCreateServer = (serverData) => {
@@ -82,21 +95,7 @@ function Homepage() {
 
   const unreadNotifications = notifications.filter(n => n.unread).length;
 
-  const textChannels = [
-    { id: 1, name: 'general', type: 'text' },
-    { id: 2, name: 'announcements', type: 'text', unread: 2 },
-    { id: 3, name: 'random', type: 'text', unread: 5 },
-    { id: 4, name: 'dev-updates', type: 'text' },
-    { id: 5, name: 'design-review', type: 'text', unread: 1 },
-    { id: 6, name: 'bug-reports', type: 'text' }
-  ];
 
-  const voiceChannels = [
-    { id: 5, name: 'General Voice', type: 'voice' },
-    { id: 6, name: 'Dev Standup', type: 'voice', users: ['Sarah_Dev', 'Mike_Design'] },
-    { id: 7, name: 'Focus Room', type: 'voice' },
-    { id: 8, name: 'Music Lounge', type: 'voice', users: ['Alex_PM'] }
-  ];
 
   const [messages, setMessages] = useState([
     {
@@ -213,10 +212,32 @@ function Homepage() {
   }
 
   // Called when a server is clicked
-const handleSelectServer = (server) => {
-  setSelectedServer(server);
-  setIsDirectMessagesSelected(false); // Unselect direct messages
-};
+  const handleSelectServer = async (server) => {
+
+    // console.log('Selected server:', server);
+    // console.log('Selected server _id:', server._id);
+
+    setSelectedServer(server);
+    setIsDirectMessagesSelected(false);
+  
+    const token = localStorage.getItem('token');
+    if (!token) return;
+  
+    try {
+      const channelsRes = await axios.get(
+        `http://localhost:3000/api/v1/server/${server._id}/channels`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      setChannels(channelsRes.data); // Adjust if your API shape is different
+    } catch (error) {
+      console.error('Error fetching channels for selected server:', error);
+      setChannels([]); // clear channels on error
+    }
+  };
+  
 
 // Called when Direct Messages is clicked
 const handleSelectDirectMessages = () => {
@@ -226,10 +247,11 @@ const handleSelectDirectMessages = () => {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white overflow-hidden">
-      <TopNavigation
+          <TopNavigation
+        user={user}
         selectedServer={selectedServer}
         isDirectMessagesSelected={isDirectMessagesSelected}
-        onSelectDirectMessages={handleSelectDirectMessages} 
+        onSelectDirectMessages={handleSelectDirectMessages}
         showNotifications={showNotifications}
         setShowNotifications={setShowNotifications}
         showProfileMenu={showProfileMenu}
@@ -251,11 +273,12 @@ const handleSelectDirectMessages = () => {
         showChannels={showChannels}
         setShowChannels={setShowChannels}
         servers={servers}
-        textChannels={textChannels}
-        voiceChannels={voiceChannels}
         currentChannel={currentChannel}
         setCurrentChannel={setCurrentChannel}
         mobileMenuRef={mobileMenuRef}
+        user={user}
+        selectedServer={selectedServer}
+        channels={channels}
       />
 
       <ServersSidebar
@@ -269,8 +292,11 @@ const handleSelectDirectMessages = () => {
       <ChannelsSidebar
         currentChannel={currentChannel}
         setCurrentChannel={setCurrentChannel}
-        textChannels={textChannels}
-        voiceChannels={voiceChannels}
+        user={user}
+        selectedServer={selectedServer}
+        channels={channels}
+        isDirectMessagesSelected={isDirectMessagesSelected}
+
       />
 
       <ChatArea

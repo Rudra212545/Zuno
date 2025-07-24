@@ -7,12 +7,16 @@ const MobileMenus = ({
   showChannels,
   setShowChannels,
   servers,
-  textChannels,
-  voiceChannels,
   currentChannel,
   setCurrentChannel,
-  mobileMenuRef
+  mobileMenuRef,
+  user,
+  selectedServer,
+  channels 
 }) => {
+    // Separate text and voice channels from channels prop
+    const textChannels = channels.filter(channel => channel.type === 'text');
+    const voiceChannels = channels.filter(channel => channel.type === 'voice');
   return (
     <>
       {/* Mobile Menu Overlay */}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, Settings, Moon, HelpCircle, LogOut } from 'lucide-react';
+import { FiCheckCircle, FiClock, FiMinusCircle, FiEyeOff, FiSlash } from "react-icons/fi";
 
 const ProfileMenu = ({ user, onLogout }) => {
   const menuItems = [
@@ -9,21 +10,34 @@ const ProfileMenu = ({ user, onLogout }) => {
     { icon: HelpCircle, label: 'Help & Support', color: 'text-gray-300' },
   ];
 
+  const statusDetails = {
+    online: { icon: <FiCheckCircle className="text-green-400" /> },
+    away: { icon: <FiClock className="text-yellow-400" /> },
+    busy: { icon: <FiMinusCircle className="text-red-500" /> },
+    invisible: { icon: <FiEyeOff className="text-gray-500" /> },
+    offline: { icon: <FiSlash className="text-gray-400" /> },
+  };
+
+  const status = user?.status?.toLowerCase() || "offline";
+  const { icon } = statusDetails[status] || statusDetails["offline"];
+
+
   return (
     <div className="absolute right-0 top-12 w-64 md:w-72 bg-gradient-to-b from-slate-900/95 to-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-600/30 py-4 z-50">
-      <div className="px-6 py-4 border-b border-gray-700/30">
-        <div className="flex items-center space-x-4">
+      <div className="px-6 py-4 border-b border-gray-700/30 ">
+        <div className="flex items-center space-x-4 ml-2">
           <img 
             src={user?.profileImageUrl || 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2'}
             alt={user?.name || "Profile"}
             className="w-14 h-14 rounded-full ring-3 ring-green-400/50 ring-offset-2 ring-offset-gray-900"
           />
           <div>
-            <p className="font-bold text-white text-lg">{user?.username || "Guest"}</p>
-            <p className="text-sm text-green-400 font-medium flex items-center">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-              Online
-            </p>
+            <p className="font-bold text-white text-lg mb-2">{user?.username || "Guest"}</p>
+            <div className="text-sm text-white font-medium flex items-center space-x-2">
+            <div className="text-lg">{icon}</div>
+            <div>{status.charAt(0).toUpperCase() + status.slice(1)}</div>
+          </div>
+
           </div>
         </div>
       </div>

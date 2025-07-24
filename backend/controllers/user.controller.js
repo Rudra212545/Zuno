@@ -301,7 +301,7 @@ export const getUserProfile = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const user = await User.findById(userId).select('username avatar');
+    const user = await User.findById(userId).select('username avatar status');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -309,11 +309,14 @@ export const getUserProfile = async (req, res) => {
 
     const profileImageUrl = user.avatar?.url || null;
     const usernameFirstLetter = user.username?.charAt(0).toUpperCase() || null;
+    const status = user?.status || "No status "
 
     res.json({
       username: user.username,
       profileImageUrl,
       usernameFirstLetter,
+      status
+
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);

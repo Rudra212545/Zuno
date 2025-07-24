@@ -57,7 +57,7 @@ const userSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['online', 'away', 'busy', 'invisible', 'offline'],
-    default: 'offline'
+    default: 'online'
   },
   lastSeen: {
     type: Date,
