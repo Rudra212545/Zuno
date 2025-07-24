@@ -33,14 +33,29 @@ function Homepage() {
   useEffect(() => {
     const fetchServers = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/v1/server/');
-        setServers(response.data); // axios puts response body in data
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+  
+        const response = await axios.get('http://localhost:3000/api/v1/server/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+  
+        console.log('API servers response:', response.data);
+        // Adjust here depending on response shape
+        setServers(Array.isArray(response.data) ? response.data : response.data.servers || []);
       } catch (error) {
         console.error("Failed to fetch servers", error);
       }
     };
+  
     fetchServers();
   }, []);
+  
 
   const handleCreateServer = (serverData) => {
     // console.log('Server created successfully:', serverData);

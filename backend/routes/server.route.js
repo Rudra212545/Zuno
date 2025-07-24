@@ -8,7 +8,7 @@ const router = express.Router();
 // Server Creation 
 router.post('/create',verifyToken, upload.single('icon'), createServer);
 // Fetching all servers 
-router.get("/",getAllServers);
+router.get("/",verifyToken,getAllServers);
 
 // For getting server info 
 router.get("/:id",getServerInfo)

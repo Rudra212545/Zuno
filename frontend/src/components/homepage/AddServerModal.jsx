@@ -30,6 +30,7 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
   const [iconFile, setIconFile] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [loading, setLoading] = useState(false); // <-- loader state added
   const fileInputRef = useRef(null);
 
   // Trigger file input click when rectangle is clicked
@@ -75,6 +76,7 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
     e.preventDefault();
     if (!serverName) return;
   
+    setLoading(true); // <-- start loader
     const formData = new FormData();
     formData.append('name', serverName);
     if (iconFile) {
@@ -102,6 +104,8 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
     }catch (error) {
       console.error('Create server error details:', error);
       alert(error.response?.data?.message || error.message || 'Failed to create server');
+    }finally{
+      setLoading(false);
     }
   };
   
@@ -116,7 +120,7 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
   return (
     <>
       <GoogleFonts />
-      <div 
+      <div
         className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4"
         onClick={handleBackdropClick}
         style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
@@ -124,26 +128,39 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
         <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-gray-900 border border-gray-600/50 rounded-3xl shadow-2xl w-full max-w-md p-8 text-white relative overflow-hidden">
           {/* Decorative gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none"></div>
-          
+  
           {/* Close button */}
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-200"
+            disabled={loading}
           >
             <X size={20} />
           </button>
           <div className="relative z-10">
             <div className="text-center mb-8">
-
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2" style={{ fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
+              <h2
+                className="text-3xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2"
+                style={{ fontFamily: 'Space Grotesk, Inter, sans-serif' }}
+              >
                 Create Server
               </h2>
-              <p className="text-gray-400 text-base font-medium" style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400' }}>Set up your new community space</p>
+              <p
+                className="text-gray-400 text-base font-medium"
+                style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400' }}
+              >
+                Set up your new community space
+              </p>
             </div>
-
+  
             <div className="space-y-6">
               <div className="space-y-2">
-                <div className="block text-sm font-semibold text-gray-300 tracking-wide" style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '0.025em' }}>SERVER NAME</div>
+                <div
+                  className="block text-sm font-semibold text-gray-300 tracking-wide"
+                  style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '0.025em' }}
+                >
+                  SERVER NAME
+                </div>
                 <input
                   type="text"
                   value={serverName}
@@ -151,12 +168,18 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
                   className="w-full px-4 py-3 bg-slate-700/70 text-white border border-slate-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400 font-medium"
                   placeholder="Enter your server name..."
                   style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px' }}
+                  disabled={loading}
                 />
               </div>
-
+  
               <div className="space-y-3">
-                <div className="block text-sm font-semibold text-gray-300 tracking-wide" style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '0.025em' }}>SERVER ICON</div>
-
+                <div
+                  className="block text-sm font-semibold text-gray-300 tracking-wide"
+                  style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '0.025em' }}
+                >
+                  SERVER ICON
+                </div>
+  
                 {/* Hidden file input */}
                 <input
                   type="file"
@@ -164,15 +187,16 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
                   onChange={handleFileChange}
                   ref={fileInputRef}
                   className="hidden"
+                  disabled={loading}
                 />
-
+  
                 {/* Drag & Drop Area */}
                 <div
                   onClick={handleRectangleClick}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  className={`relative  cursor-pointer w-full h-60 rounded-2xl border-2 border-dashed transition-all duration-300 ${
+                  className={`relative cursor-pointer w-full h-60 rounded-2xl border-2 border-dashed transition-all duration-300 ${
                     isDragging
                       ? 'border-indigo-400 bg-indigo-500/20 scale-105'
                       : iconPreview
@@ -196,6 +220,7 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
                               handleRectangleClick();
                             }}
                             className="p-3 bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors shadow-lg"
+                            disabled={loading}
                           >
                             <Camera size={20} />
                           </button>
@@ -206,6 +231,7 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
                               removeIcon();
                             }}
                             className="p-3 bg-red-600 rounded-full hover:bg-red-700 transition-colors shadow-lg"
+                            disabled={loading}
                           >
                             <X size={20} />
                           </button>
@@ -218,33 +244,51 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
                       <div className="relative inline-flex items-center justify-center mb-4">
                         {/* Animated ring */}
                         <div className="w-20 h-20 rounded-full border-3 border-dashed border-indigo-500/60 animate-spin-slow group-hover:border-indigo-400 transition-colors"></div>
-                        
+  
                         {/* Inner circle with camera */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-14 h-14 bg-gradient-to-br from-indigo-600/30 to-purple-600/30 rounded-full flex items-center justify-center group-hover:from-indigo-600/40 group-hover:to-purple-600/40 transition-all duration-300 backdrop-blur-sm">
-                            <Camera size={24} className="text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+                            <Camera
+                              size={24}
+                              className="text-indigo-400 group-hover:text-indigo-300 transition-colors"
+                            />
                           </div>
                         </div>
-                        
+  
                         {/* Outer glow ring */}
                         <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md"></div>
                       </div>
-                      
-                      <div className="text-indigo-400 font-semibold mb-2 group-hover:text-indigo-300 transition-colors text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+  
+                      <div
+                        className="text-indigo-400 font-semibold mb-2 group-hover:text-indigo-300 transition-colors text-lg"
+                        style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+                      >
                         Upload Server Icon
                       </div>
-                      <div className="text-sm text-gray-500 font-medium mb-1" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      <div
+                        className="text-sm text-gray-500 font-medium mb-1"
+                        style={{ fontFamily: 'Inter, sans-serif' }}
+                      >
                         Drag & drop your image here
                       </div>
-                      <div className="text-sm text-gray-500 font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        or <span className="text-indigo-400 underline font-semibold cursor-pointer">click to browse</span>
+                      <div
+                        className="text-sm text-gray-500 font-medium"
+                        style={{ fontFamily: 'Inter, sans-serif' }}
+                      >
+                        or{' '}
+                        <span className="text-indigo-400 underline font-semibold cursor-pointer">
+                          click to browse
+                        </span>
                       </div>
-                      <div className="text-xs text-gray-600 mt-3 font-medium tracking-wide" style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '0.025em' }}>
+                      <div
+                        className="text-xs text-gray-600 mt-3 font-medium tracking-wide"
+                        style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '0.025em' }}
+                      >
                         PNG, JPG, GIF up to 10MB
                       </div>
                     </div>
                   )}
-
+  
                   {/* Drag overlay */}
                   {isDragging && (
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-2xl flex items-center justify-center backdrop-blur-sm">
@@ -252,17 +296,23 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
                         <div className="w-16 h-16 rounded-full border-3 border-dashed border-white/80 flex items-center justify-center mb-3 animate-pulse">
                           <Upload size={28} className="text-white" />
                         </div>
-                        <div className="text-white font-bold text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Release to upload</div>
+                        <div
+                          className="text-white font-bold text-xl"
+                          style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+                        >
+                          Release to upload
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
-
+  
               <div className="flex justify-between pt-6 space-x-4">
                 <button
                   type="button"
                   onClick={onClose}
+                  disabled={loading}
                   className="flex-1 py-3 px-4 text-gray-400 hover:text-white border border-gray-600/50 hover:border-gray-500 rounded-xl transition-all duration-200 font-semibold tracking-wide"
                   style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', letterSpacing: '0.025em' }}
                 >
@@ -271,11 +321,37 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={!serverName}
-                  className="flex-1 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all duration-200 font-bold shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none tracking-wide"
+                  disabled={!serverName || loading}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all duration-200 font-bold shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none tracking-wide flex justify-center items-center"
                   style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', letterSpacing: '0.025em' }}
                 >
-                  Create Server
+                  {loading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                        ></path>
+                      </svg>
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Server'
+                  )}
                 </button>
               </div>
             </div>
@@ -284,6 +360,7 @@ const AddServerModal = ({ isOpen, onClose, onCreate,token }) => {
       </div>
     </>
   );
+  
 };
 
 export default AddServerModal;

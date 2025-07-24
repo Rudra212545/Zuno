@@ -13,9 +13,14 @@ const serverSchema = new Schema({
   channels: [
     {
       type: Types.ObjectId,
-      ref: 'Channel', // Reference to the Channel model
+      ref: 'Channel',
     }
   ],
+  userId: {
+    type: Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

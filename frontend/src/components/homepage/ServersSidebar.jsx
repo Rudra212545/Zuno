@@ -2,7 +2,7 @@ import React from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 
 const ServersSidebar = ({ servers, onOpenAddServer,onSelectServer, onSelectDirectMessages }) => {
-  // console.log("Servers data:", servers);
+  console.log("Servers data:", servers);
   return (
     <div className="hidden md:flex w-20 bg-gradient-to-b from-[#0f0f1c] via-[#1c1c2e] to-[#2e2e3e] flex-col items-center py-6 space-y-3 border-r border-white/10 mt-14 shadow-2xl overflow-y-auto overflow-x-hidden relative z-50">
       {/* Enhanced animated background elements */}

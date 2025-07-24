@@ -1,5 +1,6 @@
 import Server from '../models/server.model.js';
 import Channel from '../models/channel.model.js';
+import User from '../models/user.model.js';
 import cloudinary from 'cloudinary';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,8 +17,6 @@ export const createServer = async (req, res) => {
     const { name } = req.body;
     const userId = req.user?._id;
     const file = req.file;
-    // console.log("Request body:", req.body.name );
-    // console.log("Authenticated user:", req.user);
 
     if (!name || !userId) {
       return res.status(400).json({ message: 'Server name and user ID are required.' });
@@ -25,7 +24,6 @@ export const createServer = async (req, res) => {
 
     let iconUrl = null;
 
-    // 🔼 Upload image to Cloudinary if file is present
     if (file) {
       try {
         const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
@@ -38,31 +36,40 @@ export const createServer = async (req, res) => {
         console.error('Cloudinary upload error:', uploadError);
       }
     } else {
-      // 🪄 Fallback to auto-generated icon from UI Avatars
       const encodedName = encodeURIComponent(name);
       iconUrl = `https://ui-avatars.com/api/?name=${encodedName}&background=6366F1&color=fff&bold=true`;
-
     }
-    
 
-    // 📦 Create default text & voice channels
     const generalText = new Channel({ name: 'general', type: 'text', isPrivate: false });
     const generalVoice = new Channel({ name: 'general', type: 'voice', isPrivate: false });
 
     await generalText.save();
     await generalVoice.save();
 
-    // 🛠️ Create the server
-    // console.log("Final iconUrl before saving server:", iconUrl);
     const server = new Server({
       name,
       iconUrl: iconUrl,
-      owner: userId,
+      userId,
       members: [userId],
       channels: [generalText._id, generalVoice._id],
     });
 
     await server.save();
+
+    // Update user document to add this server
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $push: {
+          servers: {
+            server: server._id,
+            role: 'owner',
+            joinedAt: new Date()
+          }
+        }
+      },
+      { new: true }
+    );
 
     res.status(201).json({ message: 'Server created successfully.', server });
   } catch (error) {
@@ -71,9 +78,10 @@ export const createServer = async (req, res) => {
   }
 };
 
+
 export const getAllServers = async (req, res) => {
   try {
-    const servers = await Server.find(); // fetch all servers from DB
+    const servers = await Server.find({ userId: req.user._id });
     res.json(servers);
   } catch (error) {
     console.error("Error fetching servers:", error);
