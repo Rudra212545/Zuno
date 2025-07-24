@@ -21,6 +21,8 @@ const SignupPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [token, setToken] = useState(null);
+
   let navigate = useNavigate();
 
 
@@ -60,6 +62,9 @@ const SignupPage = () => {
         email: data.email,
         password: data.password,
       });
+
+         // Save JWT token to localStorage for future API requests
+         localStorage.setItem('token', response.data.data.token);
 
       // alert("Sign up successful!");
       navigate("/home");
@@ -102,6 +107,30 @@ const SignupPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#0f0f1c] via-[#1c1c2e] to-[#2e2e3e] relative overflow-hidden">
+
+      {isSubmitting && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="relative flex flex-col items-center space-y-4">
+              {/* Glowing spinning ring */}
+              <div className="w-20 h-20 rounded-full border-4 border-t-transparent border-b-transparent border-l-purple-500 border-r-pink-500 animate-spin shadow-2xl"></div>
+
+              {/* Bouncing logo */}
+              <div className="relative animate-bounce">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-xl opacity-50"></div>
+                <div className="relative bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-3 shadow-lg border border-white/20">
+                  <FontAwesomeIcon icon={faHeadset} className="text-white text-2xl" />
+                </div>
+              </div>
+
+              {/* Loading text */}
+              <p className="text-white text-sm animate-pulse">Signing you in to <span className="text-purple-400">ZUNO</span>...</p>
+            </div>
+          </div>
+        )}
+
+
+
+
       {/* Enhanced animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Main gradient orbs */}

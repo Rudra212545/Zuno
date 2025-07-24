@@ -8,12 +8,7 @@ import { admin } from "../utils/firebase.js";
 import bcrypt from 'bcrypt';
 
 
-// Helper: Generate tokens
-const generateTokens = (user) => {
-  const accessToken = user.generateAccessToken();
-  const refreshToken = user.generateRefreshToken();
-  return { accessToken, refreshToken };
-};
+const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 // Helper: Clean user object for response
 const createUserResponse = (user) => {
@@ -89,20 +84,20 @@ export const registerUser = asyncHandler(async (req, res,next) => {
   });
 
   const savedUser = await newUser.save();
-  const { accessToken, refreshToken } = generateTokens(savedUser);
+  
   const userResponse = createUserResponse(savedUser);
 
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+  // ✅ THIS is the object you're signing with JWT
+  const token = jwt.sign(
+    { _id: newUser._id, email: newUser.email },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
 
   res.status(201).json(
     new ApiResponse(201, {
       user: userResponse,
-      accessToken
+      token
     }, 'User registered successfully')
   );
 });

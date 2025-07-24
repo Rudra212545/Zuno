@@ -34,10 +34,14 @@ function Homepage() {
   const [channels, setChannels] = useState([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-  
     const fetchData = async () => {
+      const token = localStorage.getItem('token'); // ✅ moved inside
+  
+      if (!token) {
+        console.warn('No token found. Aborting fetch.');
+        return;
+      }
+  
       try {
         const [userRes, serverRes] = await Promise.all([
           axios.get('http://localhost:3000/api/v1/users/avatar', {
@@ -55,8 +59,6 @@ function Homepage() {
           : serverRes.data.servers || [];
   
         setServers(serversData);
-  
-        // ❌ Don't select a server or fetch channels yet
         setSelectedServer(null);
         setChannels([]);
       } catch (error) {
