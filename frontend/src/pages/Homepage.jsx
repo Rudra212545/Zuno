@@ -19,7 +19,6 @@ function Homepage() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showChannels, setShowChannels] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showAddServerModal, setShowAddServerModal] = useState(false);
   const [isDirectMessagesSelected, setIsDirectMessagesSelected] =useState(true);
   
@@ -32,6 +31,9 @@ function Homepage() {
   const [user, setUser] = useState(null);
   const [selectedServer, setSelectedServer] = useState(null);
   const [channels, setChannels] = useState([]);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -164,15 +166,17 @@ function Homepage() {
   };
 
   const confirmLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userData');
-    sessionStorage.clear();
-    setIsLoggedIn(false);
-    setShowLogoutConfirm(false);
-    navigate("/login");
-    setIsLoggedIn(true);
-  };
-
+    setIsLoggingOut(true);
+  
+    setTimeout(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userData');
+      sessionStorage.clear();
+      setShowLogoutConfirm(false);
+      setIsLoggingOut(false);
+      navigate('/login');
+    }, 1000);
+  }
   const cancelLogout = () => {
     setShowLogoutConfirm(false);
   };
@@ -209,9 +213,6 @@ function Homepage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (!isLoggedIn) {
-    return <LogoutScreen setIsLoggedIn={setIsLoggedIn} />;
-  }
 
   // Called when a server is clicked
   const handleSelectServer = async (server) => {
@@ -312,8 +313,9 @@ const handleSelectDirectMessages = () => {
       <LogoutModal
         showLogoutConfirm={showLogoutConfirm}
         confirmLogout={confirmLogout}
-        cancelLogout={cancelLogout}
+        cancelLogout={() => setShowLogoutConfirm(false)}
         logoutConfirmRef={logoutConfirmRef}
+        isLoggingOut={isLoggingOut}
       />
 
       <AddServerModal
