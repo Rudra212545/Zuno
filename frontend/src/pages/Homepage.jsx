@@ -6,6 +6,7 @@ import ChannelsSidebar from '../components/homepage/ChannelsSidebar';
 import ChatArea from '../components/homepage/ChatArea';
 import LogoutModal from '../components/homepage/LogoutModal';
 import AddServerModal from '../components/homepage/AddServerModal';
+import AddChannelForm from '../components/homepage/AddChannelForm';
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 
@@ -33,6 +34,8 @@ function Homepage() {
   const [channels, setChannels] = useState([]);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showCreateChannelForm, setShowCreateChannelForm] = useState(false);
+
 
 
   useEffect(() => {
@@ -299,7 +302,7 @@ const handleSelectDirectMessages = () => {
         selectedServer={selectedServer}
         channels={channels}
         isDirectMessagesSelected={isDirectMessagesSelected}
-
+        onOpenCreateChannel={() => setShowCreateChannelForm(true)}
       />
 
       <ChatArea
@@ -323,6 +326,16 @@ const handleSelectDirectMessages = () => {
         onClose={() => setShowAddServerModal(false)}
         onCreate={handleCreateServer}
       />
+      {showCreateChannelForm && (
+  <AddChannelForm
+    serverId={selectedServer?._id}
+    userId={user?._id}
+    onClose={() => setShowCreateChannelForm(false)}
+    onCreate={(newChannel) => {
+      setChannels(prev => [...prev, newChannel]);
+    }}
+  />
+)}
     </div>
   );
 }

@@ -1,13 +1,8 @@
-import React from 'react';
-import { Hash, Volume2, Mic, Headphones, Settings,  ChevronDown,
-  Plus,
-  UserPlus,
-  Bell,
-  Shield,
-  LogOut, } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Hash, Volume2, Mic, Headphones, Settings, ChevronDown, Plus, UserPlus, Bell, Shield, LogOut, MoreVertical, Edit3, Trash2, Lock, Users, Volume, VolumeX, Copy } from 'lucide-react';
 import { Menu } from '@headlessui/react';
 import { FiCheckCircle, FiClock, FiMinusCircle, FiEyeOff, FiSlash } from "react-icons/fi";
-
 
 const ChannelsSidebar = ({ 
   currentChannel, 
@@ -15,7 +10,8 @@ const ChannelsSidebar = ({
   isDirectMessagesSelected,
   user,
   selectedServer,
-  channels 
+  channels,
+  onOpenCreateChannel
 }) => {
   // Separate text and voice channels from channels prop
   const textChannels = channels.filter(channel => channel.type === 'text');
@@ -32,9 +28,160 @@ const ChannelsSidebar = ({
   const status = user?.status?.toLowerCase() || "offline";
   const { icon } = statusDetails[status] || statusDetails["offline"];
 
+  // Channel Settings Dropdown Component with Portal
+  const ChannelSettingsDropdown = ({ channel, isVoiceChannel = false }) => {
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef(null);
+
+    const updatePosition = () => {
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        const dropdownWidth = 224; // w-56 = 14rem = 224px
+        
+        setDropdownPosition({
+          top: rect.bottom + 4,
+          left: Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 8),
+        });
+      }
+    };
+
+    return (
+      <Menu as="div" className="relative z-[9999]">
+        {({ open }) => (
+          <>
+            <Menu.Button 
+              ref={buttonRef}
+              onClick={updatePosition}
+              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 border border-transparent hover:border-white/20 backdrop-blur-sm"
+            >
+              <MoreVertical size={14} className="drop-shadow-sm" />
+            </Menu.Button>
+
+            {open && createPortal(
+              <Menu.Items 
+                style={{
+                  position: 'fixed',
+                  top: dropdownPosition.top,
+                  left: dropdownPosition.left,
+                  zIndex: 9999
+                }}
+                className="w-56 bg-gray-900/98 backdrop-blur-2xl divide-y divide-gray-700/60 rounded-xl shadow-2xl ring-1 ring-white/20 focus:outline-none border border-gray-700/40 overflow-hidden"
+                static
+              >
+                {/* Background effects */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-800/60 via-gray-900/60 to-slate-900/60 rounded-xl pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-purple-900/5 to-blue-900/10 rounded-xl pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
+                
+                <div className="relative px-2 py-2 space-y-1">
+                  {/* Edit Channel */}
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        className={`${
+                          active 
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30 scale-[1.02]' 
+                            : 'text-gray-300 hover:bg-white/10'
+                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                        onClick={() => console.log(`Edit ${channel.name}`)}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
+                        <Edit3 size={14} className="mr-3 relative z-10" />
+                        <span className="relative z-10">Edit Channel</span>
+                      </button>
+                    )}
+                  </Menu.Item>
+
+                  {/* Copy Channel Link */}
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        className={`${
+                          active 
+                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30 scale-[1.02]' 
+                            : 'text-gray-300 hover:bg-white/10'
+                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                        onClick={() => console.log(`Copy link for ${channel.name}`)}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
+                        <Copy size={14} className="mr-3 relative z-10" />
+                        <span className="relative z-10">Copy Channel Link</span>
+                      </button>
+                    )}
+                  </Menu.Item>
+
+                  {/* Manage Permissions */}
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        className={`${
+                          active 
+                            ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30 scale-[1.02]' 
+                            : 'text-gray-300 hover:bg-white/10'
+                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                        onClick={() => console.log(`Manage permissions for ${channel.name}`)}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 to-orange-500/0 group-hover:from-amber-500/10 group-hover:to-orange-500/10 transition-all duration-300" />
+                        <Lock size={14} className="mr-3 relative z-10" />
+                        <span className="relative z-10">Manage Permissions</span>
+                      </button>
+                    )}
+                  </Menu.Item>
+
+                  {/* Invite to Channel */}
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        className={`${
+                          active 
+                            ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30 scale-[1.02]' 
+                            : 'text-gray-300 hover:bg-white/10'
+                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                        onClick={() => console.log(`Invite to ${channel.name}`)}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all duration-300" />
+                        <Users size={14} className="mr-3 relative z-10" />
+                        <span className="relative z-10">Invite People</span>
+                      </button>
+                    )}
+                  </Menu.Item>
+                </div>
+
+                {/* Separator */}
+                <div className="h-px bg-gradient-to-r from-transparent via-gray-500/60 to-transparent relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm" />
+                </div>
+
+                <div className="relative px-2 py-2">
+                  {/* Delete Channel */}
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        className={`${
+                          active 
+                            ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-500/30 scale-[1.02]' 
+                            : 'text-red-400 hover:bg-red-500/15'
+                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                        onClick={() => console.log(`Delete ${channel.name}`)}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-rose-500/0 group-hover:from-red-500/10 group-hover:to-rose-500/10 transition-all duration-300" />
+                        <Trash2 size={14} className="mr-3 relative z-10" />
+                        <span className="relative z-10">Delete Channel</span>
+                      </button>
+                    )}
+                  </Menu.Item>
+                </div>
+              </Menu.Items>,
+              document.body
+            )}
+          </>
+        )}
+      </Menu>
+    );
+  };
 
   return (
-    <div className="hidden md:flex w-78 bg-gradient-to-b from-slate-900 via-gray-900 to-slate-950 flex-col border-r border-gray-700/40 mt-14 shadow-2xl relative overflow-hidden">
+    <div className="hidden md:flex w-78 bg-gradient-to-b from-slate-900 via-gray-900 to-slate-950 flex-col border-r border-gray-700/40 mt-14 shadow-2xl relative">
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-purple-900/5 to-blue-900/10 pointer-events-none" />
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
@@ -63,170 +210,203 @@ const ChannelsSidebar = ({
           )
         :
         (
-          // {/* Enhanced Dropdown Menu */}
-          <Menu as="div" className="relative z-[100]">
-            {({ open }) => (
-              <>
-                <Menu.Button className="group relative flex items-center p-2 text-gray-400 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/30 border border-transparent hover:border-indigo-500/30 backdrop-blur-sm">
-                  <ChevronDown 
-                    size={20} 
-                    className={`transition-all duration-300 ${
-                      open ? 'rotate-180 text-indigo-400 drop-shadow-lg' : 'group-hover:text-indigo-400 group-hover:drop-shadow-lg'
-                    }`} 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/20 group-hover:to-purple-500/20 rounded-lg transition-all duration-300" />
-                  <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 rounded-lg blur-sm transition-all duration-300" />
-                </Menu.Button>
+          // Enhanced Dropdown Menu with Portal
+          <Menu as="div" className="relative z-[9999]">
+            {({ open }) => {
+              const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+              const buttonRef = useRef(null);
 
-                <Menu.Items className="absolute right-0 top-full mt-1 w-64 origin-top-right bg-gray-900/98 backdrop-blur-2xl divide-y divide-gray-700/60 rounded-2xl shadow-2xl ring-1 ring-white/20 focus:outline-none z-[110] border border-gray-700/40 overflow-hidden">
-                  {/* Enhanced background gradient with animation */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-gray-800/60 via-gray-900/60 to-slate-900/60 rounded-2xl pointer-events-none" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-purple-900/5 to-blue-900/10 rounded-2xl pointer-events-none" />
-                  <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
+              const updatePosition = () => {
+                if (buttonRef.current) {
+                  const rect = buttonRef.current.getBoundingClientRect();
+                  const dropdownWidth = 256; // w-64 = 16rem = 256px
                   
-                  <div className="relative px-2 py-3 space-y-1">
-                    {/* Create Channel */}
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          className={`${
-                            active 
-                              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/40 scale-[1.02] ring-1 ring-indigo-400/50' 
-                              : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-indigo-500/20'
-                          } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                          onClick={() => console.log("Create Channel")}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
-                          <div className={`p-2 rounded-lg mr-3 relative z-10 ${
-                            active ? 'bg-white/25 shadow-lg' : 'bg-indigo-500/15 group-hover:bg-indigo-500/25 border border-indigo-500/20'
-                          } transition-all duration-300`}>
-                            <Plus size={16} className={active ? 'text-white drop-shadow-sm' : 'text-indigo-400 group-hover:text-indigo-300'} />
-                          </div>
-                          <span className="relative z-10 font-semibold">Create Channel</span>
-                        </button>
-                      )}
-                    </Menu.Item>
+                  setDropdownPosition({
+                    top: rect.bottom + 4,
+                    left: Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 8),
+                  });
+                }
+              };
 
-                    {/* Invite People */}
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          className={`${
-                            active 
-                              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-500/40 scale-[1.02] ring-1 ring-emerald-400/50' 
-                              : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-emerald-500/20'
-                          } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                          onClick={() => console.log("Invite People")}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
-                          <div className={`p-2 rounded-lg mr-3 relative z-10 ${
-                            active ? 'bg-white/25 shadow-lg' : 'bg-emerald-500/15 group-hover:bg-emerald-500/25 border border-emerald-500/20'
-                          } transition-all duration-300`}>
-                            <UserPlus size={16} className={active ? 'text-white drop-shadow-sm' : 'text-emerald-400 group-hover:text-emerald-300'} />
-                          </div>
-                          <span className="relative z-10 font-semibold">Invite People</span>
-                        </button>
-                      )}
-                    </Menu.Item>
+              return (
+                <>
+                  <Menu.Button 
+                    ref={buttonRef}
+                    onClick={updatePosition}
+                    className="group relative flex items-center p-2 text-gray-400 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/30 border border-transparent hover:border-indigo-500/30 backdrop-blur-sm"
+                  >
+                    <ChevronDown 
+                      size={20} 
+                      className={`transition-all duration-300 ${
+                        open ? 'rotate-180 text-indigo-400 drop-shadow-lg' : 'group-hover:text-indigo-400 group-hover:drop-shadow-lg'
+                      }`} 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/20 group-hover:to-purple-500/20 rounded-lg transition-all duration-300" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 rounded-lg blur-sm transition-all duration-300" />
+                  </Menu.Button>
 
-                    {/* Notification Settings */}
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          className={`${
-                            active 
-                              ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-xl shadow-amber-500/40 scale-[1.02] ring-1 ring-amber-400/50' 
-                              : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-amber-500/20'
-                          } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                          onClick={() => console.log("Notification Settings")}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 to-orange-500/0 group-hover:from-amber-500/10 group-hover:to-orange-500/10 transition-all duration-300" />
-                          <div className={`p-2 rounded-lg mr-3 relative z-10 ${
-                            active ? 'bg-white/25 shadow-lg' : 'bg-amber-500/15 group-hover:bg-amber-500/25 border border-amber-500/20'
-                          } transition-all duration-300`}>
-                            <Bell size={16} className={active ? 'text-white drop-shadow-sm' : 'text-amber-400 group-hover:text-amber-300'} />
-                          </div>
-                          <span className="relative z-10 font-semibold">Notification Settings</span>
-                        </button>
-                      )}
-                    </Menu.Item>
+                  {open && createPortal(
+                    <Menu.Items 
+                      style={{
+                        position: 'fixed',
+                        top: dropdownPosition.top,
+                        left: dropdownPosition.left,
+                        zIndex: 9999
+                      }}
+                      className="w-64 bg-gray-900/98 backdrop-blur-2xl divide-y divide-gray-700/60 rounded-2xl shadow-2xl ring-1 ring-white/20 focus:outline-none border border-gray-700/40 overflow-hidden"
+                      static
+                    >
+                      {/* Enhanced background gradient with animation */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800/60 via-gray-900/60 to-slate-900/60 rounded-2xl pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-purple-900/5 to-blue-900/10 rounded-2xl pointer-events-none" />
+                      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
+                      
+                      <div className="relative px-2 py-3 space-y-1">
+                        {/* Create Channel */}
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              className={`${
+                                active 
+                                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/40 scale-[1.02] ring-1 ring-indigo-400/50' 
+                                  : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-indigo-500/20'
+                              } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
+                              onClick={onOpenCreateChannel}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
+                              <div className={`p-2 rounded-lg mr-3 relative z-10 ${
+                                active ? 'bg-white/25 shadow-lg' : 'bg-indigo-500/15 group-hover:bg-indigo-500/25 border border-indigo-500/20'
+                              } transition-all duration-300`}>
+                                <Plus size={16} className={active ? 'text-white drop-shadow-sm' : 'text-indigo-400 group-hover:text-indigo-300'} />
+                              </div>
+                              <span className="relative z-10 font-semibold">Create Channel</span>
+                            </button>
+                          )}
+                        </Menu.Item>
 
-                    {/* Privacy Settings */}
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          className={`${
-                            active 
-                              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-xl shadow-blue-500/40 scale-[1.02] ring-1 ring-blue-400/50' 
-                              : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-blue-500/20'
-                          } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                          onClick={() => console.log("Privacy Settings")}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all duration-300" />
-                          <div className={`p-2 rounded-lg mr-3 relative z-10 ${
-                            active ? 'bg-white/25 shadow-lg' : 'bg-blue-500/15 group-hover:bg-blue-500/25 border border-blue-500/20'
-                          } transition-all duration-300`}>
-                            <Shield size={16} className={active ? 'text-white drop-shadow-sm' : 'text-blue-400 group-hover:text-blue-300'} />
-                          </div>
-                          <span className="relative z-10 font-semibold">Privacy Settings</span>
-                        </button>
-                      )}
-                    </Menu.Item>
+                        {/* Invite People */}
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              className={`${
+                                active 
+                                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-500/40 scale-[1.02] ring-1 ring-emerald-400/50' 
+                                  : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-emerald-500/20'
+                              } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
+                              onClick={() => console.log("Invite People")}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
+                              <div className={`p-2 rounded-lg mr-3 relative z-10 ${
+                                active ? 'bg-white/25 shadow-lg' : 'bg-emerald-500/15 group-hover:bg-emerald-500/25 border border-emerald-500/20'
+                              } transition-all duration-300`}>
+                                <UserPlus size={16} className={active ? 'text-white drop-shadow-sm' : 'text-emerald-400 group-hover:text-emerald-300'} />
+                              </div>
+                              <span className="relative z-10 font-semibold">Invite People</span>
+                            </button>
+                          )}
+                        </Menu.Item>
 
-                    {/* Server Settings */}
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          className={`${
-                            active 
-                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl shadow-purple-500/40 scale-[1.02] ring-1 ring-purple-400/50' 
-                              : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-purple-500/20'
-                          } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                          onClick={() => console.log("Server Settings")}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/10 group-hover:to-pink-500/10 transition-all duration-300" />
-                          <div className={`p-2 rounded-lg mr-3 relative z-10 ${
-                            active ? 'bg-white/25 shadow-lg' : 'bg-purple-500/15 group-hover:bg-purple-500/25 border border-purple-500/20'
-                          } transition-all duration-300`}>
-                            <Settings size={16} className={active ? 'text-white drop-shadow-sm' : 'text-purple-400 group-hover:text-purple-300'} />
-                          </div>
-                          <span className="relative z-10 font-semibold">Server Settings</span>
-                        </button>
-                      )}
-                    </Menu.Item>
-                  </div>
+                        {/* Notification Settings */}
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              className={`${
+                                active 
+                                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-xl shadow-amber-500/40 scale-[1.02] ring-1 ring-amber-400/50' 
+                                  : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-amber-500/20'
+                              } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
+                              onClick={() => console.log("Notification Settings")}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 to-orange-500/0 group-hover:from-amber-500/10 group-hover:to-orange-500/10 transition-all duration-300" />
+                              <div className={`p-2 rounded-lg mr-3 relative z-10 ${
+                                active ? 'bg-white/25 shadow-lg' : 'bg-amber-500/15 group-hover:bg-amber-500/25 border border-amber-500/20'
+                              } transition-all duration-300`}>
+                                <Bell size={16} className={active ? 'text-white drop-shadow-sm' : 'text-amber-400 group-hover:text-amber-300'} />
+                              </div>
+                              <span className="relative z-10 font-semibold">Notification Settings</span>
+                            </button>
+                          )}
+                        </Menu.Item>
 
-                  {/* Separator with enhanced styling */}
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-500/60 to-transparent relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm" />
-                  </div>
+                        {/* Privacy Settings */}
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              className={`${
+                                active 
+                                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-xl shadow-blue-500/40 scale-[1.02] ring-1 ring-blue-400/50' 
+                                  : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-blue-500/20'
+                              } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
+                              onClick={() => console.log("Privacy Settings")}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all duration-300" />
+                              <div className={`p-2 rounded-lg mr-3 relative z-10 ${
+                                active ? 'bg-white/25 shadow-lg' : 'bg-blue-500/15 group-hover:bg-blue-500/25 border border-blue-500/20'
+                              } transition-all duration-300`}>
+                                <Shield size={16} className={active ? 'text-white drop-shadow-sm' : 'text-blue-400 group-hover:text-blue-300'} />
+                              </div>
+                              <span className="relative z-10 font-semibold">Privacy Settings</span>
+                            </button>
+                          )}
+                        </Menu.Item>
 
-                  <div className="relative px-2 py-3">
-                    {/* Leave Server */}
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          className={`${
-                            active 
-                              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-xl shadow-red-500/40 scale-[1.02] ring-1 ring-red-400/50' 
-                              : 'text-red-400 hover:bg-red-500/15 border border-transparent hover:border-red-500/30'
-                          } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                          onClick={() => console.log("Leave Server")}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-rose-500/0 group-hover:from-red-500/10 group-hover:to-rose-500/10 transition-all duration-300" />
-                          <div className={`p-2 rounded-lg mr-3 relative z-10 ${
-                            active ? 'bg-white/25 shadow-lg' : 'bg-red-500/15 group-hover:bg-red-500/25 border border-red-500/30'
-                          } transition-all duration-300`}>
-                            <LogOut size={16} className={active ? 'text-white drop-shadow-sm' : 'text-red-400 group-hover:text-red-300'} />
-                          </div>
-                          <span className="relative z-10 font-semibold">Leave Server</span>
-                        </button>
-                      )}
-                    </Menu.Item>
-                  </div>
-                </Menu.Items>
-              </>
-            )}
+                        {/* Server Settings */}
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              className={`${
+                                active 
+                                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl shadow-purple-500/40 scale-[1.02] ring-1 ring-purple-400/50' 
+                                  : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-purple-500/20'
+                              } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
+                              onClick={() => console.log("Server Settings")}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/10 group-hover:to-pink-500/10 transition-all duration-300" />
+                              <div className={`p-2 rounded-lg mr-3 relative z-10 ${
+                                active ? 'bg-white/25 shadow-lg' : 'bg-purple-500/15 group-hover:bg-purple-500/25 border border-purple-500/20'
+                              } transition-all duration-300`}>
+                                <Settings size={16} className={active ? 'text-white drop-shadow-sm' : 'text-purple-400 group-hover:text-purple-300'} />
+                              </div>
+                              <span className="relative z-10 font-semibold">Server Settings</span>
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </div>
+
+                      {/* Separator with enhanced styling */}
+                      <div className="h-px bg-gradient-to-r from-transparent via-gray-500/60 to-transparent relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm" />
+                      </div>
+
+                      <div className="relative px-2 py-3">
+                        {/* Leave Server */}
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              className={`${
+                                active 
+                                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-xl shadow-red-500/40 scale-[1.02] ring-1 ring-red-400/50' 
+                                  : 'text-red-400 hover:bg-red-500/15 border border-transparent hover:border-red-500/30'
+                              } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
+                              onClick={() => console.log("Leave Server")}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-rose-500/0 group-hover:from-red-500/10 group-hover:to-rose-500/10 transition-all duration-300" />
+                              <div className={`p-2 rounded-lg mr-3 relative z-10 ${
+                                active ? 'bg-white/25 shadow-lg' : 'bg-red-500/15 group-hover:bg-red-500/25 border border-red-500/30'
+                              } transition-all duration-300`}>
+                                <LogOut size={16} className={active ? 'text-white drop-shadow-sm' : 'text-red-400 group-hover:text-red-300'} />
+                              </div>
+                              <span className="relative z-10 font-semibold">Leave Server</span>
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </div>
+                    </Menu.Items>,
+                    document.body
+                  )}
+                </>
+              );
+            }}
           </Menu>
         )}
       </div>
@@ -262,18 +442,17 @@ const ChannelsSidebar = ({
     /* Channels list when Direct Messages is NOT selected */
     <>
       {/* Text Channels */}
-      <div className="pt-6 relative">
+      <div className="pt-6 relative ">
         <div className="px-4 mb-3 flex items-center justify-between group">
           <span className="text-xs font-bold text-gray-400 uppercase tracking-widest relative">
             Text Channels
             <div className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full opacity-60" />
           </span>
-          <Plus size={16} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
+          <Plus  size={16} onClick={onOpenCreateChannel} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
         </div>
         {textChannels.map((channel) => (
           <div
             key={channel.id}
-            onClick={() => setCurrentChannel(channel.name)}
             className={`mx-3 px-3 py-3 rounded-xl flex items-center justify-between cursor-pointer group transition-all duration-300 relative overflow-hidden backdrop-blur-sm ${
               currentChannel === channel.name
                 ? 'bg-gradient-to-r from-indigo-600/40 to-purple-600/40 text-white border-l-4 border-indigo-500 shadow-xl ring-1 ring-indigo-500/30 transform scale-[1.02]'
@@ -281,16 +460,19 @@ const ChannelsSidebar = ({
             }`}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
-            <div className="flex items-center relative z-10">
+            <div className="flex items-center relative z-10" onClick={() => setCurrentChannel(channel.name)}>
               <Hash size={18} className="mr-3 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:text-indigo-400 group-hover:drop-shadow-sm" />
               <span className="text-sm font-semibold group-hover:font-bold transition-all duration-300">{channel.name}</span>
             </div>
-            {channel.unread && (
-              <span className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full px-2.5 py-1 min-w-[24px] text-center font-bold shadow-xl animate-pulse ring-2 ring-red-400/30 relative z-10">
-                {channel.unread}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent rounded-full" />
-              </span>
-            )}
+            <div className="flex items-center gap-2 relative z-10">
+              {channel.unread && (
+                <span className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full px-2.5 py-1 min-w-[24px] text-center font-bold shadow-xl animate-pulse ring-2 ring-red-400/30">
+                  {channel.unread}
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent rounded-full" />
+                </span>
+              )}
+              <ChannelSettingsDropdown channel={channel} />
+            </div>
             {currentChannel === channel.name && (
               <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full shadow-lg" />
             )}
@@ -299,26 +481,31 @@ const ChannelsSidebar = ({
       </div>
 
       {/* Voice Channels */}
-      <div className="pt-6 relative">
-        <div className="px-4 mb-3 flex items-center justify-between group">
+      <div className="pt-6 relative ">
+        <div className="px-4 mb-3 flex items-center justify-between group ">
           <span className="text-xs font-bold text-gray-400 uppercase tracking-widest relative">
             Voice Channels
             <div className="absolute -bottom-1 left-0 w-14 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full opacity-60" />
           </span>
-          <Plus size={16} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
+          <Plus size={16} onClick={onOpenCreateChannel} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
         </div>
         {voiceChannels.map((channel) => (
           <div key={channel.id} className="mx-3 relative">
             <div className="px-3 py-3 rounded-xl flex items-center cursor-pointer text-gray-400 hover:bg-gradient-to-r hover:from-gray-700/40 hover:to-gray-600/30 hover:text-gray-200 transition-all duration-300 group relative overflow-hidden border border-transparent hover:border-gray-600/30 backdrop-blur-sm hover:shadow-lg">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/5 group-hover:to-teal-500/5 transition-all duration-300" />
-              <Volume2 size={18} className="mr-3 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:text-emerald-400 group-hover:drop-shadow-sm relative z-10" />
-              <span className="text-sm font-semibold flex-1 group-hover:font-bold transition-all duration-300 relative z-10">{channel.name}</span>
-              {channel.users && channel.users.length > 0 && (
-                <span className="text-xs text-green-400 font-bold bg-green-400/20 px-2.5 py-1 rounded-lg ring-1 ring-green-400/30 shadow-lg relative z-10">
-                  {channel.users.length}
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-lg" />
-                </span>
-              )}
+              <div className="flex items-center flex-1 relative z-10">
+                <Volume2 size={18} className="mr-3 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:text-emerald-400 group-hover:drop-shadow-sm" />
+                <span className="text-sm font-semibold group-hover:font-bold transition-all duration-300">{channel.name}</span>
+              </div>
+              <div className="flex items-center gap-2 relative z-10">
+                {channel.users && channel.users.length > 0 && (
+                  <span className="text-xs text-green-400 font-bold bg-green-400/20 px-2.5 py-1 rounded-lg ring-1 ring-green-400/30 shadow-lg">
+                    {channel.users.length}
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-lg" />
+                  </span>
+                )}
+                <ChannelSettingsDropdown channel={channel} isVoiceChannel={true} />
+              </div>
             </div>
             {channel.users && channel.users.map((user, index) => (
               <div key={index} className="ml-9 px-3 py-2 text-xs text-gray-500 flex items-center hover:text-gray-400 transition-all duration-300 group rounded-lg hover:bg-gray-800/30 relative overflow-hidden">

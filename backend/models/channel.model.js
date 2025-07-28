@@ -26,6 +26,11 @@ const channelSchema = new Schema({
     },
     default: undefined,
   },
+  createdBy: {
+    type: Types.ObjectId,
+    ref: 'User',
+    required: true,  // Must have a creator
+  }
 }, {
   timestamps: true,
 });
