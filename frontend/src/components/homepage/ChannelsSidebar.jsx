@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Hash, Volume2, Mic, Headphones, Settings, ChevronDown, Plus, UserPlus, Bell, Shield, LogOut, MoreVertical, Edit3, Trash2, Lock, Users, Volume, VolumeX, Copy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Hash, Volume2, Mic,MicOff, Headphones,  HeadphoneOff, Settings, ChevronDown, Plus, UserPlus, Bell, Shield, LogOut, MoreVertical, Edit3, Trash2, Lock, Users, Volume, VolumeX, Copy } from 'lucide-react';
 import { Menu } from '@headlessui/react';
 import { FiCheckCircle, FiClock, FiMinusCircle, FiEyeOff, FiSlash } from "react-icons/fi";
 
@@ -13,9 +14,14 @@ const ChannelsSidebar = ({
   channels,
   onOpenCreateChannel
 }) => {
+  const navigate = useNavigate(); 
   // Separate text and voice channels from channels prop
   const textChannels = channels.filter(channel => channel.type === 'text');
   const voiceChannels = channels.filter(channel => channel.type === 'voice');
+
+  const [isMuted, setIsMuted] = useState(false);
+  const [isDeafened, setIsDeafened] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const statusDetails = {
     online: { icon: <FiCheckCircle className="text-green-400" /> },
@@ -32,153 +38,164 @@ const ChannelsSidebar = ({
   const ChannelSettingsDropdown = ({ channel, isVoiceChannel = false }) => {
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
     const buttonRef = useRef(null);
-
+  
     const updatePosition = () => {
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
         const dropdownWidth = 224; // w-56 = 14rem = 224px
-        
         setDropdownPosition({
           top: rect.bottom + 4,
           left: Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 8),
         });
       }
     };
-
+  
     return (
       <Menu as="div" className="relative z-[9999]">
-        {({ open }) => (
-          <>
-            <Menu.Button 
-              ref={buttonRef}
-              onClick={updatePosition}
-              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 border border-transparent hover:border-white/20 backdrop-blur-sm"
-            >
-              <MoreVertical size={14} className="drop-shadow-sm" />
-            </Menu.Button>
-
-            {open && createPortal(
-              <Menu.Items 
-                style={{
-                  position: 'fixed',
-                  top: dropdownPosition.top,
-                  left: dropdownPosition.left,
-                  zIndex: 9999
-                }}
-                className="w-56 bg-gray-900/98 backdrop-blur-2xl divide-y divide-gray-700/60 rounded-xl shadow-2xl ring-1 ring-white/20 focus:outline-none border border-gray-700/40 overflow-hidden"
-                static
+        {({ open }) => {
+          useEffect(() => {
+            if (open) {
+              updatePosition();
+              window.addEventListener("resize", updatePosition);
+              return () => window.removeEventListener("resize", updatePosition);
+            }
+          }, [open]);
+  
+          return (
+            <>
+              <Menu.Button
+                ref={buttonRef}
+                onClick={updatePosition}
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 border border-transparent hover:border-white/20 backdrop-blur-sm"
               >
-                {/* Background effects */}
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-800/60 via-gray-900/60 to-slate-900/60 rounded-xl pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-purple-900/5 to-blue-900/10 rounded-xl pointer-events-none" />
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
-                
-                <div className="relative px-2 py-2 space-y-1">
-                  {/* Edit Channel */}
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        className={`${
-                          active 
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30 scale-[1.02]' 
-                            : 'text-gray-300 hover:bg-white/10'
-                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
-                        onClick={() => console.log(`Edit ${channel.name}`)}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
-                        <Edit3 size={14} className="mr-3 relative z-10" />
-                        <span className="relative z-10">Edit Channel</span>
-                      </button>
-                    )}
-                  </Menu.Item>
-
-                  {/* Copy Channel Link */}
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        className={`${
-                          active 
-                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30 scale-[1.02]' 
-                            : 'text-gray-300 hover:bg-white/10'
-                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
-                        onClick={() => console.log(`Copy link for ${channel.name}`)}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
-                        <Copy size={14} className="mr-3 relative z-10" />
-                        <span className="relative z-10">Copy Channel Link</span>
-                      </button>
-                    )}
-                  </Menu.Item>
-
-                  {/* Manage Permissions */}
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        className={`${
-                          active 
-                            ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30 scale-[1.02]' 
-                            : 'text-gray-300 hover:bg-white/10'
-                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
-                        onClick={() => console.log(`Manage permissions for ${channel.name}`)}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 to-orange-500/0 group-hover:from-amber-500/10 group-hover:to-orange-500/10 transition-all duration-300" />
-                        <Lock size={14} className="mr-3 relative z-10" />
-                        <span className="relative z-10">Manage Permissions</span>
-                      </button>
-                    )}
-                  </Menu.Item>
-
-                  {/* Invite to Channel */}
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        className={`${
-                          active 
-                            ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30 scale-[1.02]' 
-                            : 'text-gray-300 hover:bg-white/10'
-                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
-                        onClick={() => console.log(`Invite to ${channel.name}`)}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all duration-300" />
-                        <Users size={14} className="mr-3 relative z-10" />
-                        <span className="relative z-10">Invite People</span>
-                      </button>
-                    )}
-                  </Menu.Item>
-                </div>
-
-                {/* Separator */}
-                <div className="h-px bg-gradient-to-r from-transparent via-gray-500/60 to-transparent relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm" />
-                </div>
-
-                <div className="relative px-2 py-2">
-                  {/* Delete Channel */}
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        className={`${
-                          active 
-                            ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-500/30 scale-[1.02]' 
-                            : 'text-red-400 hover:bg-red-500/15'
-                        } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
-                        onClick={() => console.log(`Delete ${channel.name}`)}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-rose-500/0 group-hover:from-red-500/10 group-hover:to-rose-500/10 transition-all duration-300" />
-                        <Trash2 size={14} className="mr-3 relative z-10" />
-                        <span className="relative z-10">Delete Channel</span>
-                      </button>
-                    )}
-                  </Menu.Item>
-                </div>
-              </Menu.Items>,
-              document.body
-            )}
-          </>
-        )}
+                <MoreVertical size={14} className="drop-shadow-sm" />
+              </Menu.Button>
+  
+              {open &&
+                createPortal(
+                  <Menu.Items
+                    static
+                    style={{
+                      position: 'fixed',
+                      top: dropdownPosition.top,
+                      left: dropdownPosition.left,
+                      zIndex: 9999,
+                    }}
+                    className="w-56 bg-gray-900/98 backdrop-blur-2xl divide-y divide-gray-700/60 rounded-xl shadow-2xl ring-1 ring-white/20 focus:outline-none border border-gray-700/40 overflow-hidden"
+                  >
+                    {/* Background Effects */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800/60 via-gray-900/60 to-slate-900/60 rounded-xl pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-purple-900/5 to-blue-900/10 rounded-xl pointer-events-none" />
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
+  
+                    <div className="relative px-2 py-2 space-y-1">
+                      {/* Edit Channel */}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            className={`${
+                              active
+                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30 scale-[1.02]'
+                                : 'text-gray-300 hover:bg-white/10'
+                            } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                            onClick={() => console.log(`Edit ${channel.name}`)}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
+                            <Edit3 size={14} className="mr-3 relative z-10" />
+                            <span className="relative z-10">Edit Channel</span>
+                          </button>
+                        )}
+                      </Menu.Item>
+  
+                      {/* Copy Channel Link */}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            className={`${
+                              active
+                                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30 scale-[1.02]'
+                                : 'text-gray-300 hover:bg-white/10'
+                            } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                            onClick={() => console.log(`Copy link for ${channel.name}`)}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
+                            <Copy size={14} className="mr-3 relative z-10" />
+                            <span className="relative z-10">Copy Channel Link</span>
+                          </button>
+                        )}
+                      </Menu.Item>
+  
+                      {/* Manage Permissions */}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            className={`${
+                              active
+                                ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30 scale-[1.02]'
+                                : 'text-gray-300 hover:bg-white/10'
+                            } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                            onClick={() => console.log(`Manage permissions for ${channel.name}`)}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 to-orange-500/0 group-hover:from-amber-500/10 group-hover:to-orange-500/10 transition-all duration-300" />
+                            <Lock size={14} className="mr-3 relative z-10" />
+                            <span className="relative z-10">Manage Permissions</span>
+                          </button>
+                        )}
+                      </Menu.Item>
+  
+                      {/* Invite People */}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            className={`${
+                              active
+                                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30 scale-[1.02]'
+                                : 'text-gray-300 hover:bg-white/10'
+                            } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                            onClick={() => console.log(`Invite to ${channel.name}`)}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all duration-300" />
+                            <Users size={14} className="mr-3 relative z-10" />
+                            <span className="relative z-10">Invite People</span>
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </div>
+  
+                    {/* Divider */}
+                    <div className="h-px bg-gradient-to-r from-transparent via-gray-500/60 to-transparent relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm" />
+                    </div>
+  
+                    <div className="relative px-2 py-2">
+                      {/* Delete Channel */}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            className={`${
+                              active
+                                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-500/30 scale-[1.02]'
+                                : 'text-red-400 hover:bg-red-500/15'
+                            } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
+                            onClick={() => console.log(`Delete ${channel.name}`)}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-rose-500/0 group-hover:from-red-500/10 group-hover:to-rose-500/10 transition-all duration-300" />
+                            <Trash2 size={14} className="mr-3 relative z-10" />
+                            <span className="relative z-10">Delete Channel</span>
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </div>
+                  </Menu.Items>,
+                  document.body
+                )}
+            </>
+          );
+        }}
       </Menu>
     );
   };
+
 
   return (
     <div className="hidden md:flex w-78 bg-gradient-to-b from-slate-900 via-gray-900 to-slate-950 flex-col border-r border-gray-700/40 mt-14 shadow-2xl relative">
@@ -533,7 +550,7 @@ const ChannelsSidebar = ({
         <div className="relative group">
           <div className="w-12 h-12 rounded-full overflow-hidden ring-3 ring-green-400/60 ring-offset-2 ring-offset-gray-900 shadow-xl group-hover:ring-green-400/80 transition-all duration-300 group-hover:scale-105">
             <img 
-              src={user?.profileImageUrl || 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2'}
+              src={user?.profileImageUrl}
               alt={user?.name || "Profile"}
               className="w-full h-full object-cover"
             />
@@ -551,19 +568,58 @@ const ChannelsSidebar = ({
           </div>
           </div>
         </div>
-        <div className="flex relative z-10">
-          {[
-            { icon: Mic, color: 'text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-green-500/20 hover:to-emerald-500/20 hover:ring-1 hover:ring-green-500/30' },
-            { icon: Headphones, color: 'text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-cyan-500/20 hover:ring-1 hover:ring-blue-500/30' },
-            { icon: Settings, color: 'text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20 hover:ring-1 hover:ring-purple-500/30' }
-          ].map((item, index) => (
-            <button key={index} className={`p-2.5 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-lg backdrop-blur-sm border border-transparent hover:border-white/10 relative overflow-hidden group ${item.color}`}>
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/0 group-hover:from-white/5 group-hover:to-white/10 transition-all duration-300" />
-              <item.icon size={18} className="relative z-10 group-hover:drop-shadow-lg" />
-              <div className="absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-300 bg-gradient-to-r from-current/20 to-current/10" />
-            </button>
-          ))}
-        </div>
+        <div className="flex items-center gap-1 relative z-10">
+        {[
+  {
+    icon: isMuted ? MicOff : Mic,
+    ring: 'ring-green-500/30',
+    bg: 'from-green-500/20 to-emerald-500/20',
+    gradient: 'from-current/20 to-current/10',
+    onClick: () => setIsMuted(prev => !prev),
+    isActive: isMuted,
+    label: isMuted ? "Unmute Mic" : "Mute Mic"
+  },
+  {
+    icon: isDeafened ? HeadphoneOff : Headphones,
+    ring: 'ring-blue-500/30',
+    bg: 'from-blue-500/20 to-cyan-500/20',
+    gradient: 'from-current/20 to-current/10',
+    onClick: () => setIsDeafened(prev => !prev),
+    isActive: isDeafened,
+    label: isDeafened ? "Undeafen" : "Deafen"
+  },
+  {
+    icon: Settings,
+    ring: 'ring-purple-500/30',
+    bg: 'from-purple-500/20 to-pink-500/20',
+    gradient: 'from-current/20 to-current/10',
+    onClick: () => navigate('/settings'),
+    isActive: false,
+    label: "User Settings"
+  }
+        ].map(({ icon: Icon, ring, bg, gradient, onClick, isActive, label }, index) => (
+  <button
+    key={index}
+    onClick={onClick}
+    aria-label={label}
+    title={label}
+    className={`
+      group relative overflow-hidden p-2.5 rounded-xl border border-transparent
+      ${isActive ? "text-white" : "text-gray-400"}
+      hover:text-white hover:bg-gradient-to-r hover:${bg}
+      hover:ring-1 hover:${ring}
+      hover:scale-110 hover:shadow-lg backdrop-blur-sm
+      transition-all duration-300
+    `}
+  >
+    <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/0 group-hover:from-white/5 group-hover:to-white/10 transition-all duration-300" />
+    <Icon size={18} className="relative z-10 group-hover:drop-shadow-lg" />
+    <div className={`absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-300 bg-gradient-to-r ${gradient}`} />
+  </button>
+))}
+
+</div>
+
       </div>
     </div>
   );
