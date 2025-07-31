@@ -1,11 +1,32 @@
 // models/Message.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-const MessageSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: String,
-  timestamp: { type: Date, default: Date.now },
-  channel: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel', required: true },
+const { Schema, model, Types } = mongoose;
+
+const messageSchema = new Schema({
+  user: {
+    type: Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+  channel: {
+    type: Types.ObjectId,
+    ref: 'Channel',
+    required: true,
+  },
+}, {
+  timestamps: true,
 });
 
-module.exports = mongoose.model('Message', MessageSchema);
+const Message = model('Message', messageSchema);
+
+export default Message;

@@ -315,7 +315,7 @@ userSchema.index({ createdAt: -1 });
 
 // Virtual for accepted friend count
 userSchema.virtual('friendCount').get(function () {
-  return this.friends.filter(friend => friend.status === 'accepted').length;
+  return (this.friends || []).filter(friend => friend.status === 'accepted').length;
 });
 
 // Pre-save password hashing

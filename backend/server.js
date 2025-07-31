@@ -21,7 +21,7 @@ const io = new Server(httpServer, {
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
-  chatSocketHandler(io, socket);
+  initChatSocket(io, socket);
 });
 
 connectDB()

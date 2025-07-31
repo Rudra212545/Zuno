@@ -9,11 +9,13 @@ import AddServerModal from '../components/homepage/AddServerModal';
 import AddChannelForm from '../components/homepage/AddChannelForm';
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
-
+import socket from '../utils/socket';
+import {sendMessage} from "../api/messageApi"
 
 function Homepage() {
   const navigate = useNavigate();
   const [currentChannel, setCurrentChannel] = useState('general');
+  const [currentChannelId, setCurrentChannelId] = useState(null);
   const [messageInput, setMessageInput] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -35,6 +37,8 @@ function Homepage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showCreateChannelForm, setShowCreateChannelForm] = useState(false);
+  const [messages, setMessages] = useState([]);
+
 
 
 
@@ -74,8 +78,22 @@ function Homepage() {
     fetchData();
   }, []);
   
-  
-  
+  useEffect(() => {
+    if (currentChannel) {
+      socket.emit('joinRoom', currentChannel);
+
+      socket.on('receiveMessage', (message) => {
+        setMessages((prev) => [...prev, message]);
+      });
+
+      return () => {
+        socket.emit('leaveRoom', currentChannel);
+        socket.off('receiveMessage');
+      };
+    }
+  }, [currentChannel]);
+
+
 
   const handleCreateServer = (serverData) => {
     // console.log('Server created successfully:', serverData);
@@ -104,64 +122,56 @@ function Homepage() {
 
 
 
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      user: 'Sarah_Dev',
-      content: 'Hey everyone! Just pushed the new feature to staging 🚀',
-      timestamp: 'Today at 2:42 PM',
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg',
-      role: 'admin'
-    },
-    {
-      id: 2,
-      user: 'Mike_Design',
-      content: 'Looks absolutely amazing! 🎨',
-      timestamp: 'Today at 2:45 PM',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg',
-      role: 'moderator'
-    },
-    {
-      id: 3,
-      user: 'Alex_PM',
-      content: 'Perfect timing for client meeting 📅',
-      timestamp: 'Today at 2:48 PM',
-      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
-      role: 'member'
-    },
-    {
-      id: 4,
-      user: 'Emma_QA',
-      content: 'Running test cases 🧪 So far so good!',
-      timestamp: 'Today at 2:52 PM',
-      avatar: 'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg',
-      role: 'member'
-    },
-    {
-      id: 5,
-      user: 'DevBot',
-      content: '🤖 Deployment to production completed. Build #247 is live.',
-      timestamp: 'Today at 3:15 PM',
-      avatar: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg',
-      role: 'bot'
-    }
-  ]);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (messageInput.trim()) {
-      const newMessage = {
-        id: messages.length + 1,
-        user: 'You',
-        content: messageInput,
-        timestamp: 'Today at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-        role: 'member'
-      };
-      setMessages([...messages, newMessage]);
+  
+    if (!messageInput.trim()) return;
+  
+    try {
+      const token = localStorage.getItem('token');
+      // 1. Send to backend (MongoDB)
+      console.log(currentChannel);
+      console.log(currentChannelId);
+      console.log(token);
+      const savedMessage = await sendMessage(currentChannelId, messageInput, token);
+  
+      // 2. Emit via socket
+      socket.emit('sendMessage', savedMessage);
+  
+      // 3. Update local state with actual saved message
+      setMessages((prev) => [...prev, savedMessage]);
       setMessageInput('');
+    } catch (error) {
+      console.error('Error sending message:', error);
     }
   };
+  
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!currentChannelId || !selectedServer || !user) return;
+  
+      const token = localStorage.getItem('token');
+      if (!token) return;
+  
+      try {
+        console.log("Fetching messages for channel:", currentChannelId);
+        const res = await axios.get(
+          `http://localhost:3000/api/v1/messages/${currentChannelId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        // console.log("Fetched messages:", res.data);
+        setMessages(res.data);
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+  
+    fetchMessages();
+  }, [currentChannelId]); // <-- updated dependency
+  
 
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -238,6 +248,10 @@ function Homepage() {
       );
   
       setChannels(channelsRes.data); // Adjust if your API shape is different
+
+      if (channelsRes.data.length > 0) {
+        setCurrentChannelId(channelsRes.data[0]._id);  // select first channel by default
+      }
     } catch (error) {
       console.error('Error fetching channels for selected server:', error);
       setChannels([]); // clear channels on error
@@ -298,6 +312,7 @@ const handleSelectDirectMessages = () => {
       <ChannelsSidebar
         currentChannel={currentChannel}
         setCurrentChannel={setCurrentChannel}
+        setCurrentChannelId={setCurrentChannelId}
         user={user}
         selectedServer={selectedServer}
         channels={channels}
@@ -307,6 +322,7 @@ const handleSelectDirectMessages = () => {
 
       <ChatArea
         currentChannel={currentChannel}
+        currentChannelId={currentChannelId}
         messages={messages}
         messageInput={messageInput}
         setMessageInput={setMessageInput}
@@ -326,6 +342,7 @@ const handleSelectDirectMessages = () => {
         onClose={() => setShowAddServerModal(false)}
         onCreate={handleCreateServer}
       />
+
       {showCreateChannelForm && (
   <AddChannelForm
     serverId={selectedServer?._id}

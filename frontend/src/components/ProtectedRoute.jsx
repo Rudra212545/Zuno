@@ -3,7 +3,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
-  console.log("Checking token in ProtectedRoute:", localStorage.getItem('token'));
+  // console.log("Checking token in ProtectedRoute:", localStorage.getItem('token'));
   const token = localStorage.getItem('token');
 
 

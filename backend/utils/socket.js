@@ -14,13 +14,23 @@ export function initChatSocket(server) {
   io.on("connection", (socket) => {
     console.log("New client connected: ", socket.id);
 
-    // Listen for a chat message from client
-    socket.on("chatMessage", (msg) => {
-      console.log("Message received: ", msg);
-
-      // Broadcast message to all connected clients
-      io.emit("chatMessage", msg);
-    });
+    socket.on("joinChannel", ({ channelId }) => {
+        socket.join(channelId);
+        console.log(`User ${socket.id} joined channel ${channelId}`);
+      });
+      
+      socket.on("chatMessage", ({ channelId, message, sender }) => {
+        console.log(`Message to ${channelId}:`, message);
+      
+        // Broadcast only to users in the same channel
+        io.to(channelId).emit("chatMessage", {
+          channelId,
+          message,
+          sender,
+          timestamp: Date.now(),
+        });
+      });
+      
 
     socket.on("disconnect", () => {
       console.log("Client disconnected: ", socket.id);

@@ -7,7 +7,8 @@ import { FiCheckCircle, FiClock, FiMinusCircle, FiEyeOff, FiSlash } from "react-
 
 const ChannelsSidebar = ({ 
   currentChannel, 
-  setCurrentChannel, 
+  setCurrentChannel,
+  setCurrentChannelId, 
   isDirectMessagesSelected,
   user,
   selectedServer,
@@ -477,7 +478,11 @@ const ChannelsSidebar = ({
             }`}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
-            <div className="flex items-center relative z-10" onClick={() => setCurrentChannel(channel.name)}>
+            <div className="flex items-center relative z-10" onClick={() =>{ 
+              setCurrentChannel(channel.name);
+              setCurrentChannelId(channel._id);
+            }}
+            >
               <Hash size={18} className="mr-3 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:text-indigo-400 group-hover:drop-shadow-sm" />
               <span className="text-sm font-semibold group-hover:font-bold transition-all duration-300">{channel.name}</span>
             </div>
@@ -514,7 +519,7 @@ const ChannelsSidebar = ({
                 <Volume2 size={18} className="mr-3 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:text-emerald-400 group-hover:drop-shadow-sm" />
                 <span className="text-sm font-semibold group-hover:font-bold transition-all duration-300">{channel.name}</span>
               </div>
-              <div className="flex items-center gap-2 relative z-10">
+              <div className="flex items-center gap-2 relative z-10" >
                 {channel.users && channel.users.length > 0 && (
                   <span className="text-xs text-green-400 font-bold bg-green-400/20 px-2.5 py-1 rounded-lg ring-1 ring-green-400/30 shadow-lg">
                     {channel.users.length}
