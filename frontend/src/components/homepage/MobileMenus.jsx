@@ -126,8 +126,8 @@ const MobileMenus = ({
                       <span className="text-xs text-green-400 font-bold bg-green-400/10 px-2 py-1 rounded-lg">{channel.users.length}</span>
                     )}
                   </div>
-                  {channel.users && channel.users.map((user, index) => (
-                    <div key={index} className="ml-9 px-3 py-1.5 text-xs text-gray-500 flex items-center">
+                  {channel.users && channel.users.map((user) => (
+                    <div key={user.id} className="ml-9 px-3 py-1.5 text-xs text-gray-500 flex items-center">
                       <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
                       <span className="font-medium">{user}</span>
                     </div>

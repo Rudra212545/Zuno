@@ -1,244 +1,169 @@
-import React, { useState, useRef, useEffect } from 'react';
-import TopNavigation from '../components/homepage/TopNavigation';
-import MobileMenus from '../components/homepage/MobileMenus';
-import ServersSidebar from '../components/homepage/ServersSidebar';
-import ChannelsSidebar from '../components/homepage/ChannelsSidebar';
-import ChatArea from '../components/homepage/ChatArea';
-import LogoutModal from '../components/homepage/LogoutModal';
-import AddServerModal from '../components/homepage/AddServerModal';
-import AddChannelForm from '../components/homepage/AddChannelForm';
+import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios';
-import socket from '../utils/socket';
-import {sendMessage} from "../api/messageApi"
+import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+
+import TopNavigation from "../components/homepage/TopNavigation";
+import MobileMenus from "../components/homepage/MobileMenus";
+import ServersSidebar from "../components/homepage/ServersSidebar";
+import ChannelsSidebar from "../components/homepage/ChannelsSidebar";
+import ChatArea from "../components/homepage/ChatArea";
+import LogoutModal from "../components/homepage/LogoutModal";
+import AddServerModal from "../components/homepage/AddServerModal";
+import AddChannelForm from "../components/homepage/AddChannelForm";
+
+import socket from "../utils/socket";
+import { sendMessage } from "../api/messageApi";
+
+// Redux slices
+import { setUser } from "../store/slices/userSlice";
+import { setServers, selectServer, addServer } from "../store/slices/serverSlice";
+import { setChannels, setCurrentChannel, setCurrentChannelId, addChannel } from "../store/slices/channelSlice";
+import { setMessages, addMessage } from "../store/slices/messageSlice";
+import { set } from "../store/slices/uiSlice";
 
 function Homepage() {
   const navigate = useNavigate();
-  const [currentChannel, setCurrentChannel] = useState('general');
-  const [currentChannelId, setCurrentChannelId] = useState(null);
-  const [messageInput, setMessageInput] = useState('');
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showChannels, setShowChannels] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [showAddServerModal, setShowAddServerModal] = useState(false);
-  const [isDirectMessagesSelected, setIsDirectMessagesSelected] =useState(true);
-  
+  const dispatch = useDispatch();
+
+  // Redux state selectors
+  const {
+    currentChannel,
+    currentChannelId,
+    channels
+  } = useSelector((state) => state.channel);
+
+  const {
+    user,
+    token
+  } = useSelector((state) => state.user);
+
+  const {
+    servers,
+    selectedServer
+  } = useSelector((state) => state.server);
+
+  const {
+    messages
+  } = useSelector((state) => state.message);
+
+  const ui = useSelector((state) => state.ui);
+
+  // Refs for click outside detection
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const logoutConfirmRef = useRef(null);
 
-  const [servers, setServers] = useState([]);
-  const [user, setUser] = useState(null);
-  const [selectedServer, setSelectedServer] = useState(null);
-  const [channels, setChannels] = useState([]);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showCreateChannelForm, setShowCreateChannelForm] = useState(false);
-  const [messages, setMessages] = useState([]);
-
-
-
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem('token'); // ✅ moved inside
-  
-      if (!token) {
-        console.warn('No token found. Aborting fetch.');
-        return;
-      }
-  
-      try {
-        const [userRes, serverRes] = await Promise.all([
-          axios.get('http://localhost:3000/api/v1/users/avatar', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get('http://localhost:3000/api/v1/server/', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-  
-        setUser(userRes.data);
-  
-        const serversData = Array.isArray(serverRes.data)
-          ? serverRes.data
-          : serverRes.data.servers || [];
-  
-        setServers(serversData);
-        setSelectedServer(null);
-        setChannels([]);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-  
-    fetchData();
-  }, []);
-  
-  useEffect(() => {
-    if (currentChannel) {
-      socket.emit('joinRoom', currentChannel);
-
-      socket.on('receiveMessage', (message) => {
-        setMessages((prev) => [...prev, message]);
-      });
-
-      return () => {
-        socket.emit('leaveRoom', currentChannel);
-        socket.off('receiveMessage');
-      };
-    }
-  }, [currentChannel]);
-
-
-
-  const handleCreateServer = (serverData) => {
-    // console.log('Server created successfully:', serverData);
-  
-    setServers(prev => {
-      const updated = [...prev, serverData];
-      // console.log('Updated servers list:', updated);
-      return updated;
-    });
-  };
-  
+  // Sample notifications (replace with real)
   const notifications = [
     {
       id: 1,
-      type: 'friend_request',
-      user: 'Alex_Developer',
-      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
-      message: 'sent you a friend request',
-      time: '2 minutes ago',
-      unread: true
+      type: "friend_request",
+      user: "Alex_Developer",
+      avatar: "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg",
+      message: "sent you a friend request",
+      time: "2 minutes ago",
+      unread: true,
     },
-
   ];
+  const unreadNotifications = notifications.filter((n) => n.unread).length;
 
-  const unreadNotifications = notifications.filter(n => n.unread).length;
-
-
-
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-  
-    if (!messageInput.trim()) return;
-  
-    try {
-      const token = localStorage.getItem('token');
-      // 1. Send to backend (MongoDB)
-      console.log(currentChannel);
-      console.log(currentChannelId);
-      console.log(token);
-      const savedMessage = await sendMessage(currentChannelId, messageInput, token);
-  
-      // 2. Emit via socket
-      socket.emit('sendMessage', savedMessage);
-  
-      // 3. Update local state with actual saved message
-      setMessages((prev) => [...prev, savedMessage]);
-      setMessageInput('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
-  
+  // Fetch user & servers
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (!currentChannelId || !selectedServer || !user) return;
-  
-      const token = localStorage.getItem('token');
-      if (!token) return;
-  
+    if (!token) {
+      console.warn("No token found.");
+      return;
+    }
+
+    const fetchData = async () => {
       try {
-        console.log("Fetching messages for channel:", currentChannelId);
+        const [userRes, serverRes] = await Promise.all([
+          axios.get("http://localhost:3000/api/v1/users/avatar", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:3000/api/v1/server/", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        dispatch(setUser(userRes.data));
+
+        const serversData = Array.isArray(serverRes.data)
+          ? serverRes.data
+          : serverRes.data.servers || [];
+
+        dispatch(setServers(serversData));
+        dispatch(selectServer(null));
+        dispatch(setChannels([]));
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, [token, dispatch]);
+
+  // Socket join/leave for messages
+  useEffect(() => {
+    if (!currentChannel) return;
+
+    socket.emit("joinRoom", currentChannel);
+
+    socket.on("receiveMessage", (message) => {
+      dispatch(addMessage(message));
+    });
+
+    return () => {
+      socket.emit("leaveRoom", currentChannel);
+      socket.off("receiveMessage");
+    };
+  }, [currentChannel, dispatch]);
+
+  // Fetch messages when channel changes
+  useEffect(() => {
+    if (!currentChannelId || !selectedServer || !user) return;
+    if (!token) return;
+
+    const fetchMessages = async () => {
+      try {
         const res = await axios.get(
           `http://localhost:3000/api/v1/messages/${currentChannelId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        // console.log("Fetched messages:", res.data);
-        setMessages(res.data);
+        dispatch(setMessages(res.data));
       } catch (error) {
-        console.error('Error fetching messages:', error);
+        console.error("Error fetching messages:", error);
       }
     };
-  
+
     fetchMessages();
-  }, [currentChannelId]); // <-- updated dependency
-  
+  }, [currentChannelId, selectedServer, user, token, dispatch]);
 
-  const handleLogout = () => {
-    setShowLogoutConfirm(true);
-    setShowProfileMenu(false);
+  // Send message
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!ui.messageInput?.trim()) return;
+
+    try {
+      const savedMessage = await sendMessage(currentChannelId, ui.messageInput, token);
+      socket.emit("sendMessage", savedMessage);
+      dispatch(addMessage(savedMessage));
+      dispatch(set({ key: "messageInput", value: "" }));
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
-  const confirmLogout = () => {
-    setIsLoggingOut(true);
-  
-    setTimeout(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userData');
-      sessionStorage.clear();
-      setShowLogoutConfirm(false);
-      setIsLoggingOut(false);
-      navigate('/login');
-    }, 1000);
-  }
-  const cancelLogout = () => {
-    setShowLogoutConfirm(false);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setShowProfileMenu(false);
-      }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
-        setShowNotifications(false);
-      }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
-        setShowMobileMenu(false);
-      }
-      if (logoutConfirmRef.current && !logoutConfirmRef.current.contains(event.target)) {
-        setShowLogoutConfirm(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setShowMobileMenu(false);
-        setShowChannels(false);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-
-  // Called when a server is clicked
+  // Select server
   const handleSelectServer = async (server) => {
+    dispatch(selectServer(server));
+    dispatch(set({ key: "isDirectMessagesSelected", value: false }));
 
-    // console.log('Selected server:', server);
-    // console.log('Selected server _id:', server._id);
-
-    setSelectedServer(server);
-    setIsDirectMessagesSelected(false);
-  
-    const token = localStorage.getItem('token');
     if (!token) return;
-  
+
     try {
       const channelsRes = await axios.get(
         `http://localhost:3000/api/v1/server/${server._id}/channels`,
@@ -246,40 +171,106 @@ function Homepage() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
-      setChannels(channelsRes.data); // Adjust if your API shape is different
+
+      dispatch(setChannels(channelsRes.data));
 
       if (channelsRes.data.length > 0) {
-        setCurrentChannelId(channelsRes.data[0]._id);  // select first channel by default
+        dispatch(setCurrentChannelId(channelsRes.data[0]._id));
+      } else {
+        dispatch(setCurrentChannelId(null));
       }
     } catch (error) {
-      console.error('Error fetching channels for selected server:', error);
-      setChannels([]); // clear channels on error
+      console.error("Error fetching channels:", error);
+      dispatch(setChannels([]));
+      dispatch(setCurrentChannelId(null));
     }
   };
-  
 
-// Called when Direct Messages is clicked
-const handleSelectDirectMessages = () => {
-  setSelectedServer(null);
-  setIsDirectMessagesSelected(true);
-};
+  // Direct messages
+  const handleSelectDirectMessages = () => {
+    dispatch(selectServer(null));
+    dispatch(set({ key: "isDirectMessagesSelected", value: true }));
+    dispatch(setChannels([]));
+    dispatch(setCurrentChannelId(null));
+  };
+
+  // Logout
+  const handleLogout = () => {
+    dispatch(set({ key: "showLogoutConfirm", value: true }));
+    dispatch(set({ key: "showProfileMenu", value: false }));
+  };
+
+  const confirmLogout = () => {
+    dispatch(set({ key: "isLoggingOut", value: true }));
+
+    setTimeout(() => {
+      dispatch(setUser(null));
+      localStorage.clear();
+      sessionStorage.clear();
+      dispatch(set({ key: "showLogoutConfirm", value: false }));
+      dispatch(set({ key: "isLoggingOut", value: false }));
+      navigate("/login");
+    }, 1000);
+  };
+
+  const cancelLogout = () => {
+    dispatch(set({ key: "showLogoutConfirm", value: false }));
+  };
+
+  // Outside click close
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        dispatch(set({ key: "showProfileMenu", value: false }));
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        dispatch(set({ key: "showNotifications", value: false }));
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        dispatch(set({ key: "showMobileMenu", value: false }));
+      }
+      if (logoutConfirmRef.current && !logoutConfirmRef.current.contains(event.target)) {
+        dispatch(set({ key: "showLogoutConfirm", value: false }));
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dispatch]);
+
+  // Responsive reset
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        dispatch(set({ key: "showMobileMenu", value: false }));
+        dispatch(set({ key: "showChannels", value: false }));
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [dispatch]);
+
+  // Create server
+  const handleCreateServer = (serverData) => {
+    dispatch(addServer(serverData));
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white overflow-hidden">
-          <TopNavigation
+      <TopNavigation
         user={user}
         selectedServer={selectedServer}
-        isDirectMessagesSelected={isDirectMessagesSelected}
+        isDirectMessagesSelected={ui.isDirectMessagesSelected}
         onSelectDirectMessages={handleSelectDirectMessages}
-        showNotifications={showNotifications}
-        setShowNotifications={setShowNotifications}
-        showProfileMenu={showProfileMenu}
-        setShowProfileMenu={setShowProfileMenu}
-        showMobileMenu={showMobileMenu}
-        setShowMobileMenu={setShowMobileMenu}
-        showChannels={showChannels}
-        setShowChannels={setShowChannels}
+        showNotifications={ui.showNotifications}
+        setShowNotifications={(val) => dispatch(set({ key: "showNotifications", value: val }))}
+        showProfileMenu={ui.showProfileMenu}
+        setShowProfileMenu={(val) => dispatch(set({ key: "showProfileMenu", value: val }))}
+        showMobileMenu={ui.showMobileMenu}
+        setShowMobileMenu={(val) => dispatch(set({ key: "showMobileMenu", value: val }))}
+        showChannels={ui.showChannels}
+        setShowChannels={(val) => dispatch(set({ key: "showChannels", value: val }))}
         notifications={notifications}
         unreadNotifications={unreadNotifications}
         notificationsRef={notificationsRef}
@@ -288,13 +279,13 @@ const handleSelectDirectMessages = () => {
       />
 
       <MobileMenus
-        showMobileMenu={showMobileMenu}
-        setShowMobileMenu={setShowMobileMenu}
-        showChannels={showChannels}
-        setShowChannels={setShowChannels}
+        showMobileMenu={ui.showMobileMenu}
+        setShowMobileMenu={(val) => dispatch(set({ key: "showMobileMenu", value: val }))}
+        showChannels={ui.showChannels}
+        setShowChannels={(val) => dispatch(set({ key: "showChannels", value: val }))}
         servers={servers}
         currentChannel={currentChannel}
-        setCurrentChannel={setCurrentChannel}
+        setCurrentChannel={(val) => dispatch(setCurrentChannel(val))}
         mobileMenuRef={mobileMenuRef}
         user={user}
         selectedServer={selectedServer}
@@ -303,56 +294,59 @@ const handleSelectDirectMessages = () => {
 
       <ServersSidebar
         servers={servers}
-        onOpenAddServer={() => setShowAddServerModal(true)}
-        onSelectServer={handleSelectServer}        // updated handler
-        onSelectDirectMessages={handleSelectDirectMessages}  // new prop
+        onOpenAddServer={() => dispatch(set({ key: "showAddServerModal", value: true }))}
+        onSelectServer={handleSelectServer}
+        onSelectDirectMessages={handleSelectDirectMessages}
       />
-
 
       <ChannelsSidebar
         currentChannel={currentChannel}
-        setCurrentChannel={setCurrentChannel}
-        setCurrentChannelId={setCurrentChannelId}
+        setCurrentChannel={(val) => dispatch(setCurrentChannel(val))}
+        setCurrentChannelId={(val) => dispatch(setCurrentChannelId(val))}
+        setCallActive={(val) => dispatch(set({ key: "callActive", value: val }))}
+        setCallChannelId={(val) => dispatch(set({ key: "callChannelId", value: val }))}
         user={user}
         selectedServer={selectedServer}
         channels={channels}
-        isDirectMessagesSelected={isDirectMessagesSelected}
-        onOpenCreateChannel={() => setShowCreateChannelForm(true)}
+        isDirectMessagesSelected={ui.isDirectMessagesSelected}
+        onOpenCreateChannel={() => dispatch(set({ key: "showCreateChannelForm", value: true }))}
       />
 
       <ChatArea
         currentChannel={currentChannel}
         currentChannelId={currentChannelId}
         messages={messages}
-        messageInput={messageInput}
-        setMessageInput={setMessageInput}
+        channels={channels}
+        messageInput={ui.messageInput || ""}
+        setMessageInput={(val) => dispatch(set({ key: "messageInput", value: val }))}
         handleSendMessage={handleSendMessage}
+        callActive={ui.callActive}
+        callChannelId={ui.callChannelId}
+        onEndCall={() => dispatch(set({ key: "callActive", value: false }))}
       />
 
       <LogoutModal
-        showLogoutConfirm={showLogoutConfirm}
+        showLogoutConfirm={ui.showLogoutConfirm}
         confirmLogout={confirmLogout}
-        cancelLogout={() => setShowLogoutConfirm(false)}
+        cancelLogout={cancelLogout}
         logoutConfirmRef={logoutConfirmRef}
-        isLoggingOut={isLoggingOut}
+        isLoggingOut={ui.isLoggingOut}
       />
 
       <AddServerModal
-        isOpen={showAddServerModal}
-        onClose={() => setShowAddServerModal(false)}
+        isOpen={ui.showAddServerModal}
+        onClose={() => dispatch(set({ key: "showAddServerModal", value: false }))}
         onCreate={handleCreateServer}
       />
 
-      {showCreateChannelForm && (
-  <AddChannelForm
-    serverId={selectedServer?._id}
-    userId={user?._id}
-    onClose={() => setShowCreateChannelForm(false)}
-    onCreate={(newChannel) => {
-      setChannels(prev => [...prev, newChannel]);
-    }}
-  />
-)}
+      {ui.showCreateChannelForm && (
+        <AddChannelForm
+          serverId={selectedServer?._id}
+          userId={user?._id}
+          onClose={() => dispatch(set({ key: "showCreateChannelForm", value: false }))}
+          onCreate={(newChannel) => dispatch(addChannel(newChannel))}
+        />
+      )}
     </div>
   );
 }

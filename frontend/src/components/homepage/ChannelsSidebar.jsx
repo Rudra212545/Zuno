@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Hash, Volume2, Mic,MicOff, Headphones,  HeadphoneOff, Settings, ChevronDown, Plus, UserPlus, Bell, Shield, LogOut, MoreVertical, Edit3, Trash2, Lock, Users, Volume, VolumeX, Copy } from 'lucide-react';
+import { Hash, Volume2, Mic, MicOff, Headphones, Headphones as HeadphoneOff, Settings, ChevronDown, Plus, UserPlus, Bell, Shield, LogOut, MoreVertical, Edit3, Trash2, Lock, Users, Volume, VolumeX, Copy, Phone, PhoneOff, Video, VideoOff, Monitor, MonitorOff } from 'lucide-react';
 import { Menu } from '@headlessui/react';
 import { FiCheckCircle, FiClock, FiMinusCircle, FiEyeOff, FiSlash } from "react-icons/fi";
 
@@ -9,7 +9,12 @@ const ChannelsSidebar = ({
   currentChannel, 
   setCurrentChannel,
   setCurrentChannelId, 
+  onVoiceChannelClick,
   isDirectMessagesSelected,
+  setCallActive,
+  setCallChannelId,
+  callActive = false,
+  callChannelId,
   user,
   selectedServer,
   channels,
@@ -23,6 +28,10 @@ const ChannelsSidebar = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  
+  // Call controls state
+  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   const statusDetails = {
     online: { icon: <FiCheckCircle className="text-green-400" /> },
@@ -34,6 +43,17 @@ const ChannelsSidebar = ({
 
   const status = user?.status?.toLowerCase() || "offline";
   const { icon } = statusDetails[status] || statusDetails["offline"];
+
+  // Get current voice channel name
+  const currentVoiceChannel = voiceChannels.find(channel => channel._id === callChannelId);
+
+  // Handle call disconnect
+  const handleDisconnectCall = () => {
+    setCallActive(false);
+    setCallChannelId(null);
+    setIsVideoEnabled(false);
+    setIsScreenSharing(false);
+  };
 
   // Channel Settings Dropdown Component with Portal
   const ChannelSettingsDropdown = ({ channel, isVoiceChannel = false }) => {
@@ -513,7 +533,20 @@ const ChannelsSidebar = ({
         </div>
         {voiceChannels.map((channel) => (
           <div key={channel.id} className="mx-3 relative">
-            <div className="px-3 py-3 rounded-xl flex items-center cursor-pointer text-gray-400 hover:bg-gradient-to-r hover:from-gray-700/40 hover:to-gray-600/30 hover:text-gray-200 transition-all duration-300 group relative overflow-hidden border border-transparent hover:border-gray-600/30 backdrop-blur-sm hover:shadow-lg">
+            <div 
+              className={`px-3 py-3 rounded-xl flex items-center cursor-pointer transition-all duration-300 group relative overflow-hidden border backdrop-blur-sm hover:shadow-lg ${
+                callActive && callChannelId === channel._id
+                  ? 'bg-gradient-to-r from-emerald-600/40 to-teal-600/40 text-white border-l-4 border-emerald-500 shadow-xl ring-1 ring-emerald-500/30 transform scale-[1.02]'
+                  : 'text-gray-400 hover:bg-gradient-to-r hover:from-gray-700/40 hover:to-gray-600/30 hover:text-gray-200 border-transparent hover:border-gray-600/30'
+              }`}
+              onClick={() => {
+                setCallActive(true);           // enable voice call UI
+                setCallChannelId(channel._id);  // store the voice channel id
+                console.log('channel.name:', channel.name); 
+                setCurrentChannel(channel.name); // optional, if you want to track the name
+                setCurrentChannelId(channel._id);
+              }}
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/5 group-hover:to-teal-500/5 transition-all duration-300" />
               <div className="flex items-center flex-1 relative z-10">
                 <Volume2 size={18} className="mr-3 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:text-emerald-400 group-hover:drop-shadow-sm" />
@@ -543,6 +576,98 @@ const ChannelsSidebar = ({
   )}
 </div>
 
+      {/* Call Controls Section - Only show when call is active */}
+      {callActive && (
+        <div className="h-16 bg-gradient-to-r from-emerald-900/95 via-teal-900/95 to-emerald-900/95 backdrop-blur-xl px-4 flex items-center justify-between border-t border-emerald-700/40 shadow-2xl relative overflow-hidden">
+          {/* Enhanced background effects */}
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/20 via-teal-900/10 to-emerald-900/20" />
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+          <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-br from-emerald-600/10 to-teal-600/10 rounded-full blur-2xl animate-pulse" />
+          
+          {/* Voice Channel Info */}
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="flex items-center gap-2 p-2 bg-emerald-500/20 rounded-lg ring-1 ring-emerald-400/30 backdrop-blur-sm">
+              <Volume2 size={16} className="text-emerald-400" />
+              <span className="text-sm font-semibold text-white">
+                {currentVoiceChannel?.name || 'Voice Channel'}
+              </span>
+            </div>
+            <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse shadow-lg ring-1 ring-green-400/30" />
+          </div>
+
+          {/* Call Control Buttons */}
+          <div className="flex items-center gap-2 relative z-10">
+            {[
+              {
+                icon: isMuted ? MicOff : Mic,
+                onClick: () => setIsMuted(prev => !prev),
+                isActive: isMuted,
+                activeColor: 'from-red-500 to-red-600',
+                hoverColor: 'from-green-500 to-emerald-500',
+                ring: 'ring-green-500/30',
+                label: isMuted ? "Unmute" : "Mute"
+              },
+              {
+                icon: isDeafened ? HeadphoneOff : Headphones,
+                onClick: () => setIsDeafened(prev => !prev),
+                isActive: isDeafened,
+                activeColor: 'from-red-500 to-red-600',
+                hoverColor: 'from-blue-500 to-cyan-500',
+                ring: 'ring-blue-500/30',
+                label: isDeafened ? "Undeafen" : "Deafen"
+              },
+              {
+                icon: isVideoEnabled ? Video : VideoOff,
+                onClick: () => setIsVideoEnabled(prev => !prev),
+                isActive: isVideoEnabled,
+                activeColor: 'from-indigo-500 to-purple-500',
+                hoverColor: 'from-indigo-500 to-purple-500',
+                ring: 'ring-indigo-500/30',
+                label: isVideoEnabled ? "Turn Off Video" : "Turn On Video"
+              },
+              {
+                icon: isScreenSharing ? Monitor : MonitorOff,
+                onClick: () => setIsScreenSharing(prev => !prev),
+                isActive: isScreenSharing,
+                activeColor: 'from-orange-500 to-amber-500',
+                hoverColor: 'from-orange-500 to-amber-500',
+                ring: 'ring-orange-500/30',
+                label: isScreenSharing ? "Stop Sharing" : "Share Screen"
+              }
+            ].map(({ icon: Icon, onClick, isActive, activeColor, hoverColor, ring, label }, index) => (
+              <button
+                key={index}
+                onClick={onClick}
+                title={label}
+                className={`
+                  group relative overflow-hidden p-2.5 rounded-xl border border-transparent
+                  ${isActive 
+                    ? `bg-gradient-to-r ${activeColor} text-white shadow-lg ring-1 ring-red-400/50` 
+                    : `text-gray-300 hover:text-white hover:bg-gradient-to-r hover:${hoverColor} hover:ring-1 hover:${ring}`
+                  }
+                  hover:scale-110 hover:shadow-lg backdrop-blur-sm
+                  transition-all duration-300
+                `}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/0 group-hover:from-white/5 group-hover:to-white/10 transition-all duration-300" />
+                <Icon size={16} className="relative z-10 group-hover:drop-shadow-lg" />
+                <div className="absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-300 bg-gradient-to-r from-current/20 to-current/10" />
+              </button>
+            ))}
+
+            {/* Disconnect Call Button */}
+            <button
+              onClick={handleDisconnectCall}
+              title="Disconnect"
+              className="group relative overflow-hidden p-2.5 rounded-xl border border-transparent text-red-400 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600 hover:ring-1 hover:ring-red-500/50 hover:scale-110 hover:shadow-lg backdrop-blur-sm transition-all duration-300 ml-2"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/0 group-hover:from-white/5 group-hover:to-white/10 transition-all duration-300" />
+              <PhoneOff size={16} className="relative z-10 group-hover:drop-shadow-lg" />
+              <div className="absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-300 bg-gradient-to-r from-red-500/20 to-red-600/10" />
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* User Area */}
       <div className="h-20 bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-900/95 backdrop-blur-xl px-4 flex items-center border-t border-gray-700/40 shadow-2xl gap-7 relative overflow-hidden">
@@ -574,7 +699,8 @@ const ChannelsSidebar = ({
           </div>
         </div>
         <div className="flex items-center gap-1 relative z-10">
-        {[
+        {/* Only show mic and headphones controls when NOT in a call */}
+        {!callActive && [
   {
     icon: isMuted ? MicOff : Mic,
     ring: 'ring-green-500/30',
@@ -592,15 +718,6 @@ const ChannelsSidebar = ({
     onClick: () => setIsDeafened(prev => !prev),
     isActive: isDeafened,
     label: isDeafened ? "Undeafen" : "Deafen"
-  },
-  {
-    icon: Settings,
-    ring: 'ring-purple-500/30',
-    bg: 'from-purple-500/20 to-pink-500/20',
-    gradient: 'from-current/20 to-current/10',
-    onClick: () => navigate('/settings'),
-    isActive: false,
-    label: "User Settings"
   }
         ].map(({ icon: Icon, ring, bg, gradient, onClick, isActive, label }, index) => (
   <button
@@ -622,6 +739,18 @@ const ChannelsSidebar = ({
     <div className={`absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-300 bg-gradient-to-r ${gradient}`} />
   </button>
 ))}
+
+        {/* Settings button - always visible */}
+        <button
+          onClick={() => navigate('/settings')}
+          aria-label="User Settings"
+          title="User Settings"
+          className="group relative overflow-hidden p-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20 hover:ring-1 hover:ring-purple-500/30 hover:scale-110 hover:shadow-lg backdrop-blur-sm transition-all duration-300"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/0 group-hover:from-white/5 group-hover:to-white/10 transition-all duration-300" />
+          <Settings size={18} className="relative z-10 group-hover:drop-shadow-lg" />
+          <div className="absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-300 bg-gradient-to-r from-current/20 to-current/10" />
+        </button>
 
 </div>
 

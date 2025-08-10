@@ -113,7 +113,7 @@ const ServersSidebar = ({ servers, onOpenAddServer,onSelectServer, onSelectDirec
       {/* Server Icons */}
       {servers.map((server, index) => (
        <div
-       key={server.id}
+       key={server._id || server.id} 
        className="relative group z-10"
        onClick={() => onSelectServer(server)}
      >
