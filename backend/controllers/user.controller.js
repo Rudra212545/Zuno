@@ -296,7 +296,7 @@ export const getUserProfile = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const user = await User.findById(userId).select('username avatar status');
+    const user = await User.findById(userId).select('username avatar status email');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -310,7 +310,8 @@ export const getUserProfile = async (req, res) => {
       username: user.username,
       profileImageUrl,
       usernameFirstLetter,
-      status
+      status,
+      email:user.email
 
     });
   } catch (error) {
@@ -318,3 +319,170 @@ export const getUserProfile = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const updateUserProfile = async (req, res) => {
+  try {
+    const { username, email, status } = req.body;
+    const userId = req.user._id;
+
+    // Get current user data first
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    console.log("Current user:", currentUser.username, currentUser.email);
+    console.log("Update request:", { username, email, status });
+
+    // Build update object with only fields that are actually changing
+    const updateFields = {};
+
+    // Only validate and update username if it's different
+    if (username && username.trim() !== currentUser.username) {
+      // Username validation
+      if (username.length < 3 || username.length > 20) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username must be between 3 and 20 characters'
+        });
+      }
+
+      // Check if username is taken by another user
+      const usernameExists = await User.findOne({
+        username: username.trim(),
+        _id: { $ne: userId }
+      });
+
+      if (usernameExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username is already taken by another user'
+        });
+      }
+
+      updateFields.username = username.trim();
+    }
+
+    // Only validate and update email if it's different
+    if (email && email.toLowerCase().trim() !== currentUser.email.toLowerCase()) {
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid email address'
+        });
+      }
+
+      // Check if email is taken by another user
+      const emailExists = await User.findOne({
+        email: email.toLowerCase().trim(),
+        _id: { $ne: userId }
+      });
+
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is already taken by another user'
+        });
+      }
+
+      updateFields.email = email.toLowerCase().trim();
+    }
+
+    // Always allow status updates (no validation needed)
+    if (status && status !== currentUser.status) {
+      updateFields.status = status;
+    }
+
+    // If no fields are actually changing
+    if (Object.keys(updateFields).length === 0) {
+      return res.json({
+        success: true,
+        message: 'No changes detected',
+        user: {
+          ...currentUser.toObject(),
+          profileImageUrl: currentUser.profileImageUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.username}&backgroundColor=6366f1`,
+          usernameFirstLetter: currentUser.username?.charAt(0)?.toUpperCase()
+        }
+      });
+    }
+
+    // Add timestamp for actual updates
+    updateFields.updatedAt = new Date();
+
+    console.log("Fields to update:", updateFields);
+
+    // Perform the update
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateFields,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    const responseData = {
+      ...updatedUser.toObject(),
+      profileImageUrl: updatedUser.profileImageUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${updatedUser.username}&backgroundColor=6366f1`,
+      usernameFirstLetter: updatedUser.username?.charAt(0)?.toUpperCase()
+    };
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: responseData
+    });
+
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again later.'
+    });
+  }
+};
+
+export const updateUserAvatar = async (req,res)=>{
+  try {
+    const userId = req.user._id;
+    const { avatarUrl } = req.body;
+
+    if (!avatarUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Avatar URL is required'
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { 
+        profileImageUrl: avatarUrl,
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Avatar updated successfully',
+      avatarUrl: updatedUser.profileImageUrl
+    });
+
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again later.'
+    });
+  }
+}

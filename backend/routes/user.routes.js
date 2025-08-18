@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { googleLogin, loginUser, registerUser, logoutUser, getUserProfile } from '../controllers/user.controller.js';
+import { googleLogin, loginUser, registerUser, logoutUser, getUserProfile , updateUserProfile, updateUserAvatar} from '../controllers/user.controller.js';
 import { validateUserRegistration } from '../middlewares/validationMiddleware.js';
 import { googleAuthController } from "../controllers/user.controller.js";
 import { verifyToken } from '../middlewares/auth.js';
@@ -32,6 +32,10 @@ router.post("logout",logoutUser);
 // Get user info 
 router.get('/avatar', verifyToken, getUserProfile);
 
+// Update user info 
+router.put("/profile",verifyToken,updateUserProfile);
 
+// Update user avatar 
+router.post("/avatar",verifyToken, updateUserAvatar);
 
 export default router;
