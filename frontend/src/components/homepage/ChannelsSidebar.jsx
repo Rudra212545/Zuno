@@ -490,7 +490,7 @@ const ChannelsSidebar = ({
         </div>
         {textChannels.map((channel) => (
           <div
-            key={channel.id}
+          key={channel._id || channel.id}
             className={`mx-3 px-3 py-3 rounded-xl flex items-center justify-between cursor-pointer group transition-all duration-300 relative overflow-hidden backdrop-blur-sm ${
               currentChannel === channel.name
                 ? 'bg-gradient-to-r from-indigo-600/40 to-purple-600/40 text-white border-l-4 border-indigo-500 shadow-xl ring-1 ring-indigo-500/30 transform scale-[1.02]'
@@ -532,7 +532,7 @@ const ChannelsSidebar = ({
           <Plus size={16} onClick={onOpenCreateChannel} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
         </div>
         {voiceChannels.map((channel) => (
-          <div key={channel.id} className="mx-3 relative">
+          <div key={channel._id || channel.id} className="mx-3 relative">
             <div 
               className={`px-3 py-3 rounded-xl flex items-center cursor-pointer transition-all duration-300 group relative overflow-hidden border backdrop-blur-sm hover:shadow-lg ${
                 callActive && callChannelId === channel._id
