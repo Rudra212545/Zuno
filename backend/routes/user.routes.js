@@ -4,6 +4,7 @@ import { googleLogin, loginUser, registerUser, logoutUser, getUserProfile , upda
 import { validateUserRegistration } from '../middlewares/validationMiddleware.js';
 import { googleAuthController } from "../controllers/user.controller.js";
 import { verifyToken } from '../middlewares/auth.js';
+import { uploadAvatar } from '../utils/upload.js';
 
 const router = express.Router();
 
@@ -36,6 +37,6 @@ router.get('/avatar', verifyToken, getUserProfile);
 router.put("/profile",verifyToken,updateUserProfile);
 
 // Update user avatar 
-router.post("/avatar",verifyToken, updateUserAvatar);
+router.post("/avatar",verifyToken,uploadAvatar, updateUserAvatar);
 
 export default router;

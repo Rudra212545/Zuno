@@ -6,6 +6,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { admin } from "../utils/firebase.js";
 import bcrypt from 'bcrypt';
+import { uploadToCloudinary } from '../utils/upload.js';
 
 
 const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET;
@@ -444,22 +445,37 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
-export const updateUserAvatar = async (req,res)=>{
+export const updateUserAvatar = async (req, res) => {
+  console.log("=== AVATAR CONTROLLER ===");
+  console.log("User ID:", req.user?._id);
+  console.log("File received:", req.file ? "YES" : "NO");
+
   try {
     const userId = req.user._id;
-    const { avatarUrl } = req.body;
 
-    if (!avatarUrl) {
+    if (!req.file) {
+      console.log("❌ No file in request");
       return res.status(400).json({
         success: false,
-        message: 'Avatar URL is required'
+        message: 'No image file provided'
       });
     }
 
+    console.log("✅ File details:", {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+
+    // Use the upload function from middleware
+    const cloudinaryResult = await uploadToCloudinary(req.file.buffer, userId);
+
+    // Update user in database
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { 
-        profileImageUrl: avatarUrl,
+        'avatar.url': cloudinaryResult.secure_url,
+        'avatar.publicId': cloudinaryResult.public_id,
         updatedAt: new Date()
       },
       { new: true }
@@ -472,17 +488,20 @@ export const updateUserAvatar = async (req,res)=>{
       });
     }
 
+    console.log("✅ User profile updated successfully");
+
     res.json({
       success: true,
       message: 'Avatar updated successfully',
-      avatarUrl: updatedUser.profileImageUrl
+      avatarUrl: updatedUser.avatar.url,
+      user: updatedUser
     });
 
   } catch (error) {
-    console.error('Avatar upload error:', error);
+    console.error('❌ Controller error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error. Please try again later.'
+      message: 'Server error during avatar upload: ' + error.message
     });
   }
-}
+};

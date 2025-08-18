@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { User, Mail, Globe, Save, X } from "lucide-react";
+import { User, Mail, Globe, Save, X, Camera } from "lucide-react";
 import { setUser } from "../store/slices/userSlice";
 import axios from "axios";
 
@@ -16,6 +16,7 @@ export default function Profile() {
   const [status, setStatus] = useState("online");
   const [isLoading, setIsLoading] = useState(false);
   const [originalData, setOriginalData] = useState({});
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Initialize form with Redux user data
   useEffect(() => {
@@ -30,6 +31,13 @@ export default function Profile() {
       });
     }
   }, [user]);
+  useEffect(() => {
+    console.log("=== PROFILE PAGE DEBUG ===");
+    console.log("Full user object:", user);
+    console.log("Avatar object:", user?.avatar);
+    console.log("Avatar URL:", user?.avatar?.url);
+    console.log("Is avatar URL valid?", user?.avatar?.url ? "YES" : "NO");
+  }, [user])
 
   const handleSave = async () => {
     if (!token) {
@@ -91,6 +99,50 @@ export default function Profile() {
     }
   };
 
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+  
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+  
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+  
+      const response = await axios.post(
+        "http://localhost:3000/api/v1/users/avatar",
+        formData,
+        {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          }
+        }
+      );
+  
+      console.log("=== UPLOAD RESPONSE DEBUG ===");
+      console.log("Response:", response.data);
+      console.log("Avatar URL:", response.data.avatarUrl);
+      console.log("User avatar URL:", response.data.user?.avatar?.url);
+  
+      if (response.data.success && response.data.user) {
+        dispatch(setUser(response.data.user));
+        console.log("✅ Redux updated with user:", response.data.user);
+      }
+      
+      alert("Profile image updated successfully!");
+      
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert(error.response?.data?.message || "Failed to upload image");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
   const handleCancel = () => {
     // Reset to original Redux values
     setUsername(originalData.username);
@@ -98,16 +150,6 @@ export default function Profile() {
     setStatus(originalData.status);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "online": return "text-green-400";
-      case "away": return "text-yellow-400";
-      case "busy": return "text-red-400";
-      case "invisible": return "text-gray-400";
-      case "offline": return "text-gray-500";
-      default: return "text-gray-400";
-    }
-  };
 
   // Show loading state if user data isn't available yet
   if (!user && !loading) {
@@ -140,36 +182,44 @@ export default function Profile() {
             
             {/* Left Panel: Avatar & Info */}
             <div className="flex flex-col items-center lg:items-start lg:w-1/3">
-              <div className="relative mb-8">
-                <img
-                  src={user?.profileImageUrl || `https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2`}
-                  alt="User avatar"
-                  className="w-40 h-40 rounded-full ring-4 ring-green-400/30 ring-offset-4 ring-offset-gray-900 shadow-xl hover:scale-105 transition-all duration-300"
-                />
-                <div className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-4 border-gray-900 shadow-lg ${
-                  status === 'online' ? 'bg-green-400' : 
-                  status === 'away' ? 'bg-yellow-400' : 
-                  status === 'busy' ? 'bg-red-400' : 'bg-gray-400'
-                }`}></div>
-              </div>
-              
-              <div className="text-center lg:text-left">
-                <h2 className="text-white text-2xl md:text-3xl font-bold mb-2 capitalize">
-                  {username.replace("_", " ")}
-                </h2>
-                <div className="flex items-center justify-center lg:justify-start gap-2 mb-4">
-                  <div className={`w-3 h-3 rounded-full ${
-                    status === 'online' ? 'bg-green-400' : 
-                    status === 'away' ? 'bg-yellow-400' : 
-                    status === 'busy' ? 'bg-red-400' : 'bg-gray-400'
-                  }`}></div>
-                  <span className={`${getStatusColor(status)} font-semibold capitalize`}>
-                    {status}
-                  </span>
-                </div>
-                
-                  
-              </div>
+            <div className="relative mb-8 group">
+            <img
+  src={user?.avatar?.url || user?.profileImageUrl || `https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2`}
+  alt="User avatar"
+  className="w-40 h-40 rounded-full ring-4 ring-green-400/30 ring-offset-4 ring-offset-gray-900 shadow-xl hover:scale-105 transition-all duration-300"
+  onLoad={() => console.log("✅ Image loaded successfully")}
+  onError={(e) => console.log("❌ Image failed to load:", e.target.src)}
+/>
+  
+  {/* Upload overlay */}
+  <label className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+    <div className="text-center text-white">
+      {isUploadingImage ? (
+        <div>Uploading...</div>
+      ) : (
+        <>
+          <Camera className="w-8 h-8 mx-auto mb-1" />
+          <span className="text-sm">Change Photo</span>
+        </>
+      )}
+    </div>
+    <input
+      type="file"
+      accept="image/*"
+      onChange={handleImageUpload}
+      disabled={isUploadingImage}
+      className="hidden"
+    />
+  </label>
+  
+  {/* Status indicator */}
+  <div className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-full border-4 border-gray-900 shadow-lg ${
+    status === 'online' ? 'bg-green-400' : 
+    status === 'away' ? 'bg-yellow-400' : 
+    status === 'busy' ? 'bg-red-400' : 
+    status === "offline" ? 'bg-white' : 'bg-gray-400'
+  }`}></div>
+</div>
             </div>
 
             {/* Right Panel: Profile Form */}
