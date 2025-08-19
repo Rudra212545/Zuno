@@ -7,6 +7,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import Homepage from './pages/Homepage';
 import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
       </ProtectedRoute>
       } />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/settings" element={<Settings/>}/>
 
     </Routes>
   </Router>

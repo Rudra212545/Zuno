@@ -59,17 +59,6 @@ const ProfileNavigation = ({
             <span className="font-medium">Home</span>
           </Link>
           
-          <Link 
-            to="/profile" 
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300 ${
-              location.pathname === '/profile' 
-                ? 'text-blue-400 bg-blue-400/10 shadow-md shadow-blue-400/20' 
-                : 'text-gray-400 hover:text-blue-400 hover:bg-gray-800/50'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span className="font-medium">Profile</span>
-          </Link>
         </div>
       </div>
 
@@ -205,7 +194,7 @@ const ProfileNavigation = ({
         <div className="absolute top-14 left-0 right-0 bg-gray-950/95 backdrop-blur-md border-b border-gray-700/60 md:hidden z-40 animate-in slide-in-from-top duration-200">
           <div className="px-4 py-3 space-y-2">
             <Link 
-              to="/dashboard" 
+              to="/home" 
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                 location.pathname === '/dashboard' 
                   ? 'text-blue-400 bg-blue-400/10' 
@@ -214,7 +203,7 @@ const ProfileNavigation = ({
               onClick={() => setShowMobileMenu(false)}
             >
               <Home className="w-5 h-5" />
-              <span className="font-medium">Dashboard</span>
+              <span className="font-medium">Home</span>
             </Link>
             <Link 
               to="/profile" 
