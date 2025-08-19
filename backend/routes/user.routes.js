@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { googleLogin, loginUser, registerUser, logoutUser, getUserProfile , updateUserProfile, updateUserAvatar, updateUserSettings} from '../controllers/user.controller.js';
+import { googleLogin, loginUser, registerUser, logoutUser, getUserProfile , updateUserProfile, updateUserAvatar, updateUserSettings, updateAppearanceSettings} from '../controllers/user.controller.js';
 import { validateUserRegistration } from '../middlewares/validationMiddleware.js';
 import { googleAuthController } from "../controllers/user.controller.js";
 import { verifyToken } from '../middlewares/auth.js';
@@ -41,4 +41,11 @@ router.post("/avatar",verifyToken,uploadAvatar, updateUserAvatar);
 
 // Update the user setting 
 router.put('/settings', verifyToken, updateUserSettings);
+
+// Update the apperance
+router.put('/appearance', verifyToken, updateAppearanceSettings);
+
+
+
+
 export default router;

@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+
   // Profile Information
   avatar: {
     url: {
@@ -53,6 +54,7 @@ const userSchema = new mongoose.Schema({
     maxlength: 20,
     default: ''
   },
+
   // Status and Presence
   status: {
     type: String,
@@ -67,6 +69,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+
   // Account Settings
   isVerified: {
     type: Boolean,
@@ -92,6 +95,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+
   // Privacy Settings
   privacySettings: {
     showEmail: {
@@ -294,6 +298,48 @@ const userSchema = new mongoose.Schema({
     expiresAt: Date,
     isActive: { type: Boolean, default: true }
   }],
+
+  // Appearance Settings
+  appearanceSettings: {
+    theme: {
+      type: String,
+      enum: ['light', 'dark', 'auto'],
+      default: 'auto'
+    },
+    accentColor: {
+      type: String,
+      enum: ['blue', 'green', 'purple', 'orange', 'pink', 'red'],
+      default: 'blue'
+    },
+    fontSize: {
+      type: String,
+      enum: ['small', 'medium', 'large', 'extra-large'],
+      default: 'medium'
+    },
+    compactMode: { type: Boolean, default: false },
+    animations: { type: Boolean, default: true },
+    transparency: { type: Boolean, default: true },
+    chatBackground: {
+      type: String,
+      enum: ['default', 'gradient', 'image'],
+      default: 'default'
+    },
+    messageGrouping: { type: Boolean, default: true },
+    showTimestamps: { type: Boolean, default: true },
+    showAvatars: { type: Boolean, default: true },
+    emojiStyle: {
+      type: String,
+      enum: ['system', 'twitter', 'apple', 'google'],
+      default: 'system'
+    },
+    highContrast: { type: Boolean, default: false },
+    reducedMotion: { type: Boolean, default: false },
+    colorBlindMode: {
+      type: String,
+      enum: ['none', 'protanopia', 'deuteranopia', 'tritanopia'],
+      default: 'none'
+    }
+  },
 
   // Account Status
   isActive: { type: Boolean, default: true },

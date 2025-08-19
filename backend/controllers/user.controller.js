@@ -516,3 +516,121 @@ export const updateUserAvatar = async (req, res) => {
     });
   }
 };
+
+export const updateUserSettings = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    console.log("=== SETTINGS UPDATE DEBUG ===");
+    console.log("User ID:", userId);
+    console.log("showOnlineStatus received:", req.body.showOnlineStatus);
+    console.log("All settings:", req.body);
+
+    // ✅ Fetch the document first, then use .set() and .save()
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // ✅ Use Mongoose document.set() for nested fields - this is the safest approach
+    user.set('privacySettings.showEmail', req.body.showEmail);
+    user.set('privacySettings.showPhone', req.body.showPhone);
+    user.set('privacySettings.allowDirectMessages', req.body.allowDirectMessages);
+    user.set('privacySettings.allowFriendRequests', req.body.allowFriendRequests);
+    user.set('privacySettings.showOnlineStatus', req.body.showOnlineStatus);
+    
+    // Notification settings
+    user.set('notificationSettings.desktop', req.body.desktop);
+    user.set('notificationSettings.mobile', req.body.mobile);
+    user.set('notificationSettings.email', req.body.email);
+    user.set('notificationSettings.sounds', req.body.sounds);
+    user.set('notificationSettings.mentions', req.body.mentions);
+    user.set('notificationSettings.directMessages', req.body.directMessages);
+    user.set('notificationSettings.friendRequests', req.body.friendRequests);
+    user.set('notificationSettings.eventReminders', req.body.eventReminders);
+    user.set('notificationSettings.callNotifications', req.body.callNotifications);
+    
+    // Video settings
+    user.set('videoSettings.autoJoinVoice', req.body.autoJoinVoice);
+    user.set('videoSettings.pushToTalk', req.body.pushToTalk);
+    user.set('videoSettings.pushToTalkKey', req.body.pushToTalkKey);
+    user.set('videoSettings.noiseSuppression', req.body.noiseSuppression);
+    user.set('videoSettings.echoCancellation', req.body.echoCancellation);
+    user.set('videoSettings.autoGainControl', req.body.autoGainControl);
+    user.set('videoSettings.videoQuality', req.body.videoQuality);
+    
+    // Language settings
+    user.set('language', req.body.language);
+    user.set('timezone', req.body.timezone);
+    user.set('autoTranslate', req.body.autoTranslate);
+    user.set('preferredTranslationLanguage', req.body.preferredTranslationLanguage);
+
+    // ✅ Save the document
+    await user.save();
+
+    console.log("✅ Settings updated successfully");
+    console.log("✅ Updated showOnlineStatus:", user.privacySettings.showOnlineStatus);
+
+    res.json({
+      success: true,
+      message: 'Settings updated successfully',
+      user: user
+    });
+
+  } catch (error) {
+    console.error('❌ Settings update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating settings',
+      error: error.message
+    });
+  }
+};
+
+export const updateAppearanceSettings = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const appearanceSettings = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          'appearanceSettings.theme': appearanceSettings.theme,
+          'appearanceSettings.accentColor': appearanceSettings.accentColor,
+          'appearanceSettings.fontSize': appearanceSettings.fontSize,
+          'appearanceSettings.compactMode': appearanceSettings.compactMode,
+          'appearanceSettings.animations': appearanceSettings.animations,
+          'appearanceSettings.transparency': appearanceSettings.transparency,
+          'appearanceSettings.chatBackground': appearanceSettings.chatBackground,
+          'appearanceSettings.messageGrouping': appearanceSettings.messageGrouping,
+          'appearanceSettings.showTimestamps': appearanceSettings.showTimestamps,
+          'appearanceSettings.showAvatars': appearanceSettings.showAvatars,
+          'appearanceSettings.emojiStyle': appearanceSettings.emojiStyle,
+          'appearanceSettings.highContrast': appearanceSettings.highContrast,
+          'appearanceSettings.reducedMotion': appearanceSettings.reducedMotion,
+          'appearanceSettings.colorBlindMode': appearanceSettings.colorBlindMode,
+          updatedAt: new Date()
+        }
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    res.json({
+      success: true,
+      message: 'Appearance settings updated successfully',
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Appearance update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating appearance settings'
+    });
+  }
+};
