@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import Homepage from './pages/Homepage';
+import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Homepage />
       </ProtectedRoute>
       } />
+      <Route path="/profile" element={<Profile />} />
 
     </Routes>
   </Router>

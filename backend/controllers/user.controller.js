@@ -291,33 +291,44 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
   try {
-    const userId = req.user._id;  // <-- from auth middleware
+    const userId = req.user._id;
 
     if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ 
+        success: false, // ✅ Add success field
+        message: 'Unauthorized' 
+      });
     }
 
-    const user = await User.findById(userId).select('username avatar status email');
+    const user = await User.findById(userId).select('-password');
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ 
+        success: false, // ✅ Add success field
+        message: 'User not found' 
+      });
     }
 
     const profileImageUrl = user.avatar?.url || null;
     const usernameFirstLetter = user.username?.charAt(0).toUpperCase() || null;
-    const status = user?.status || "No status "
+    const status = user?.status || "No status";
 
     res.json({
+      success: true,  // ✅ ADD THIS LINE - This is what was missing!
       username: user.username,
       profileImageUrl,
       usernameFirstLetter,
       status,
-      email:user.email
-
+      email: user.email,
+      user: user
     });
+
   } catch (error) {
     console.error('Error fetching user profile:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false, // ✅ Add success field
+      message: 'Server error' 
+    });
   }
 };
 
