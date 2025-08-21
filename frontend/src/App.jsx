@@ -8,6 +8,8 @@ import Homepage from './pages/Homepage';
 import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import Settings from './pages/Settings';
+import Appearance from './pages/Appearance';
+import HelpSupport from './pages/HelpSupport';
 
 function App() {
   return (
@@ -25,6 +27,9 @@ function App() {
       } />
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings/>}/>
+      <Route path="/appearance" element={<Appearance/>}/>
+      <Route path="/help" element={<HelpSupport/>}/>
+      
 
     </Routes>
   </Router>

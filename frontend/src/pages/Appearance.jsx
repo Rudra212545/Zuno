@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from 'react-hot-toast';
 import { 
   Palette, 
   Monitor, 
@@ -155,11 +156,25 @@ export default function Appearance() {
 
   const handleSave = async () => {
     if (!token) {
-      alert("No authentication token found");
+      toast.error("No authentication token found", {
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+        },
+      });
       return;
     }
 
     setIsLoading(true);
+    
+    // Show loading toast
+    const loadingToast = toast.loading('Saving appearance settings...', {
+      style: {
+        background: '#374151',
+        color: '#fff',
+      },
+    });
+
     try {
       const response = await axios.put(
         "http://localhost:3000/api/v1/users/appearance",
@@ -175,12 +190,34 @@ export default function Appearance() {
       if (response.data.success) {
         dispatch(setUser(response.data.user));
         setOriginalSettings(appearanceSettings);
-        alert("Appearance settings saved successfully!");
+        
+        // Dismiss loading toast and show success
+        toast.dismiss(loadingToast);
+        toast.success('Appearance settings saved successfully!', {
+          duration: 4000,
+          style: {
+            background: '#10b981',
+            color: '#fff',
+          },
+          iconTheme: {
+            primary: '#fff',
+            secondary: '#10b981',
+          },
+        });
       }
       
     } catch (error) {
       console.error("Appearance save error:", error);
-      alert(error.response?.data?.message || "Failed to save appearance settings");
+      
+      // Dismiss loading toast and show error
+      toast.dismiss(loadingToast);
+      toast.error(error.response?.data?.message || "Failed to save appearance settings", {
+        duration: 4000,
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+        },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -188,6 +225,13 @@ export default function Appearance() {
 
   const handleCancel = () => {
     setAppearanceSettings(originalSettings);
+    toast('Changes cancelled', {
+      icon: '🎨',
+      style: {
+        background: '#6b7280',
+        color: '#fff',
+      },
+    });
   };
 
   if (pageLoading) {
@@ -208,6 +252,28 @@ export default function Appearance() {
 
   return (
     <>
+      {/* Toast Container */}
+      <Toaster 
+        position="top-right"
+        reverseOrder={false}
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          // Define default options
+          className: '',
+          duration: 4000,
+          style: {
+            background: '#374151',
+            color: '#fff',
+            borderRadius: '12px',
+            border: '1px solid #4b5563',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
+        }}
+      />
+
       <ProfileNavigation
         user={user}
         showNotifications={ui.showNotifications}
