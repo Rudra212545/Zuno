@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from 'react-hot-toast';
 import { 
   Settings as SettingsIcon, 
   User, 
@@ -164,11 +165,25 @@ export default function Settings() {
     console.log("Settings being sent:", settings);
     
     if (!token) {
-      alert("No authentication token found");
+      toast.error("No authentication token found", {
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+        },
+      });
       return;
     }
   
     setIsLoading(true);
+    
+    // Show loading toast
+    const loadingToast = toast.loading('Saving settings...', {
+      style: {
+        background: '#374151',
+        color: '#fff',
+      },
+    });
+
     try {
       const response = await axios.put(
         "http://localhost:3000/api/v1/users/settings",
@@ -191,40 +206,37 @@ export default function Settings() {
         const savedUser = response.data.user;
         const updatedSettings = {
           // Privacy Settings
-          showEmail: savedUser.privacySettings?.showEmail || false,
-          showPhone: savedUser.privacySettings?.showPhone || false,
-          allowDirectMessages: savedUser.privacySettings?.allowDirectMessages || 'friends',
           showEmail: savedUser.privacySettings?.showEmail ?? false,
-  showPhone: savedUser.privacySettings?.showPhone ?? false,
-  allowDirectMessages: savedUser.privacySettings?.allowDirectMessages ?? 'friends',
-  allowFriendRequests: savedUser.privacySettings?.allowFriendRequests ?? true,
-  showOnlineStatus: savedUser.privacySettings?.showOnlineStatus ?? true, // ✅ This now preserves false
-  
-  // Notification Settings
-  desktop: savedUser.notificationSettings?.desktop ?? true,
-  mobile: savedUser.notificationSettings?.mobile ?? true,
-  email: savedUser.notificationSettings?.email ?? false,
-  sounds: savedUser.notificationSettings?.sounds ?? true,
-  mentions: savedUser.notificationSettings?.mentions ?? true,
-  directMessages: savedUser.notificationSettings?.directMessages ?? true,
-  friendRequests: savedUser.notificationSettings?.friendRequests ?? true,
-  eventReminders: savedUser.notificationSettings?.eventReminders ?? true,
-  callNotifications: savedUser.notificationSettings?.callNotifications ?? true,
-  
-  // Video/Voice Settings
-  autoJoinVoice: savedUser.videoSettings?.autoJoinVoice ?? false,
-  pushToTalk: savedUser.videoSettings?.pushToTalk ?? false,
-  pushToTalkKey: savedUser.videoSettings?.pushToTalkKey ?? 'Space',
-  noiseSuppression: savedUser.videoSettings?.noiseSuppression ?? true,
-  echoCancellation: savedUser.videoSettings?.echoCancellation ?? true,
-  autoGainControl: savedUser.videoSettings?.autoGainControl ?? true,
-  videoQuality: savedUser.videoSettings?.videoQuality ?? 'auto',
-  
-  // Language Settings
-  language: savedUser.language ?? 'en',
-  timezone: savedUser.timezone ?? 'UTC',
-  autoTranslate: savedUser.autoTranslate ?? false,
-  preferredTranslationLanguage: savedUser.preferredTranslationLanguage ?? 'en'
+          showPhone: savedUser.privacySettings?.showPhone ?? false,
+          allowDirectMessages: savedUser.privacySettings?.allowDirectMessages ?? 'friends',
+          allowFriendRequests: savedUser.privacySettings?.allowFriendRequests ?? true,
+          showOnlineStatus: savedUser.privacySettings?.showOnlineStatus ?? true,
+          
+          // Notification Settings
+          desktop: savedUser.notificationSettings?.desktop ?? true,
+          mobile: savedUser.notificationSettings?.mobile ?? true,
+          email: savedUser.notificationSettings?.email ?? false,
+          sounds: savedUser.notificationSettings?.sounds ?? true,
+          mentions: savedUser.notificationSettings?.mentions ?? true,
+          directMessages: savedUser.notificationSettings?.directMessages ?? true,
+          friendRequests: savedUser.notificationSettings?.friendRequests ?? true,
+          eventReminders: savedUser.notificationSettings?.eventReminders ?? true,
+          callNotifications: savedUser.notificationSettings?.callNotifications ?? true,
+          
+          // Video/Voice Settings
+          autoJoinVoice: savedUser.videoSettings?.autoJoinVoice ?? false,
+          pushToTalk: savedUser.videoSettings?.pushToTalk ?? false,
+          pushToTalkKey: savedUser.videoSettings?.pushToTalkKey ?? 'Space',
+          noiseSuppression: savedUser.videoSettings?.noiseSuppression ?? true,
+          echoCancellation: savedUser.videoSettings?.echoCancellation ?? true,
+          autoGainControl: savedUser.videoSettings?.autoGainControl ?? true,
+          videoQuality: savedUser.videoSettings?.videoQuality ?? 'auto',
+          
+          // Language Settings
+          language: savedUser.language ?? 'en',
+          timezone: savedUser.timezone ?? 'UTC',
+          autoTranslate: savedUser.autoTranslate ?? false,
+          preferredTranslationLanguage: savedUser.preferredTranslationLanguage ?? 'en'
         };
         
         // ✅ Update both local settings and original settings
@@ -233,12 +245,34 @@ export default function Settings() {
         
         console.log("✅ Settings saved successfully!");
         console.log("Updated settings:", updatedSettings);
-        alert("Settings saved successfully!");
+        
+        // Dismiss loading toast and show success
+        toast.dismiss(loadingToast);
+        toast.success('Settings saved successfully!', {
+          duration: 4000,
+          style: {
+            background: '#10b981',
+            color: '#fff',
+          },
+          iconTheme: {
+            primary: '#fff',
+            secondary: '#10b981',
+          },
+        });
       }
       
     } catch (error) {
       console.error("Settings save error:", error);
-      alert(error.response?.data?.message || "Failed to save settings");
+      
+      // Dismiss loading toast and show error
+      toast.dismiss(loadingToast);
+      toast.error(error.response?.data?.message || "Failed to save settings", {
+        duration: 4000,
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+        },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -246,6 +280,13 @@ export default function Settings() {
 
   const handleCancel = () => {
     setSettings(originalSettings);
+    toast('Changes cancelled', {
+      icon: '↩️',
+      style: {
+        background: '#6b7280',
+        color: '#fff',
+      },
+    });
   };
 
   if (pageLoading) {
@@ -266,6 +307,28 @@ export default function Settings() {
 
   return (
     <>
+      {/* Toast Container */}
+      <Toaster 
+        position="top-right"
+        reverseOrder={false}
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          // Define default options
+          className: '',
+          duration: 4000,
+          style: {
+            background: '#374151',
+            color: '#fff',
+            borderRadius: '12px',
+            border: '1px solid #4b5563',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
+        }}
+      />
+
       <ProfileNavigation
         user={user}
         showNotifications={ui.showNotifications}

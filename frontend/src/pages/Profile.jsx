@@ -6,6 +6,7 @@ import { setUser } from "../store/slices/userSlice";
 import { set } from "../store/slices/uiSlice";
 import axios from "axios";
 import ProfileNavigation from "../components/ProfileNavigation";
+import toast, { Toaster } from 'react-hot-toast'; // ✅ Add this import
 
 export default function Profile() {
   const dispatch = useDispatch();
@@ -28,30 +29,26 @@ export default function Profile() {
   const notificationsRef = useRef(null);
   const profileMenuRef = useRef(null);
 
-  // Mock data for navbar (replace with your actual data)
-  const notifications = []; // Your notifications from Redux/API
-  const unreadNotifications = 0; // Your unread count
+  // Mock data for navbar
+  const notifications = [];
+  const unreadNotifications = 0;
 
   // ✅ Click outside detection to close menus
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Close profile menu if clicked outside
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         dispatch(set({ key: "showProfileMenu", value: false }));
       }
       
-      // Close notifications if clicked outside
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         dispatch(set({ key: "showNotifications", value: false }));
       }
     };
 
-    // Add event listener when menus are open
     if (ui.showProfileMenu || ui.showNotifications) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
-    // Cleanup event listener
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -60,7 +57,6 @@ export default function Profile() {
   // ✅ Fetch user profile on component mount with token persistence
   useEffect(() => {
     const fetchUserProfile = async () => {
-      // Always check localStorage first
       const storedToken = localStorage.getItem('token');
       
       console.log("=== TOKEN DEBUG ===");
@@ -68,7 +64,6 @@ export default function Profile() {
       console.log("Stored token exists:", storedToken ? "YES" : "NO");
       console.log("Current user:", user);
       
-      // If no user but we have a token, fetch the profile
       if (!user && storedToken) {
         console.log("🔄 Fetching user profile with stored token...");
         
@@ -95,7 +90,6 @@ export default function Profile() {
           console.error("❌ Profile fetch error:", error);
           console.error("Error response:", error.response?.data);
           
-          // If token is invalid, clear it and redirect
           if (error.response?.status === 401) {
             localStorage.removeItem('token');
             navigate('/login');
@@ -112,7 +106,7 @@ export default function Profile() {
     };
   
     fetchUserProfile();
-  }, []); // Empty dependency array to run only once on mount
+  }, []);
 
   // Initialize form with Redux user data
   useEffect(() => {
@@ -137,7 +131,6 @@ export default function Profile() {
     console.log("Is avatar URL valid?", user?.avatar?.url ? "YES" : "NO");
   }, [user]);
 
-  // Logout handler
   const handleLogout = () => {
     localStorage.removeItem('token');
     dispatch(setUser(null));
@@ -147,14 +140,20 @@ export default function Profile() {
 
   const handleSave = async () => {
     if (!token) {
-      alert("No authentication token found");
+      // ✅ Replace alert with error toast
+      toast.error("No authentication token found");
       return;
     }
+
     console.log("=== PROFILE UPDATE DEBUG (AXIOS) ===");
     console.log("Token:", token ? "EXISTS" : "MISSING");
     console.log("Data:", { username, email, status });
 
     setIsLoading(true);
+    
+    // ✅ Show loading toast
+    const loadingToast = toast.loading('Updating profile...');
+
     try {
       const updateData = { username, email, status };
       
@@ -181,7 +180,10 @@ export default function Profile() {
         status: updatedUser.status
       });
       
-      alert("Profile updated successfully!");
+      // ✅ Replace alert with success toast
+      toast.success("Profile updated successfully! 🎉", {
+        id: loadingToast, // Replace the loading toast
+      });
       
     } catch (error) {
       console.error("=== AXIOS ERROR DEBUG ===");
@@ -194,7 +196,10 @@ export default function Profile() {
                           error.message || 
                           "Failed to update profile. Please try again.";
       
-      alert(`Update failed: ${errorMessage}`);
+      // ✅ Replace alert with error toast
+      toast.error(`Update failed: ${errorMessage}`, {
+        id: loadingToast, // Replace the loading toast
+      });
     } finally {
       setIsLoading(false);
     }
@@ -205,11 +210,16 @@ export default function Profile() {
     if (!file) return;
   
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      // ✅ Replace alert with error toast
+      toast.error('Please select an image file');
       return;
     }
   
     setIsUploadingImage(true);
+    
+    // ✅ Show loading toast for image upload
+    const uploadToast = toast.loading('Uploading image...');
+    
     try {
       const formData = new FormData();
       formData.append('avatar', file);
@@ -235,11 +245,17 @@ export default function Profile() {
         console.log("✅ Redux updated with user:", response.data.user);
       }
       
-      alert("Profile image updated successfully!");
+      // ✅ Replace alert with success toast
+      toast.success("Profile image updated successfully! 📸", {
+        id: uploadToast,
+      });
       
     } catch (error) {
       console.error("Upload error:", error);
-      alert(error.response?.data?.message || "Failed to upload image");
+      // ✅ Replace alert with error toast
+      toast.error(error.response?.data?.message || "Failed to upload image", {
+        id: uploadToast,
+      });
     } finally {
       setIsUploadingImage(false);
     }
@@ -249,6 +265,11 @@ export default function Profile() {
     setUsername(originalData.username);
     setEmail(originalData.email);
     setStatus(originalData.status);
+    
+    // ✅ Add informational toast
+    toast('Changes canceled', {
+      icon: '↩️',
+    });
   };
 
   // Show loading screen until data is ready
@@ -271,6 +292,57 @@ export default function Profile() {
 
   return (
     <>
+      {/* ✅ Add Toaster component for toast notifications */}
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          // Define default options
+          className: '',
+          duration: 4000,
+          style: {
+            background: '#374151',
+            color: '#fff',
+            borderRadius: '12px',
+            border: '1px solid #4B5563',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
+          // Default options for specific types
+          success: {
+            duration: 3000,
+            style: {
+              background: '#059669',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#059669',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#DC2626',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#DC2626',
+            },
+          },
+          loading: {
+            style: {
+              background: '#3B82F6',
+              color: '#fff',
+            },
+          },
+        }}
+      />
+
       <ProfileNavigation
         user={user}
         showNotifications={ui.showNotifications}
