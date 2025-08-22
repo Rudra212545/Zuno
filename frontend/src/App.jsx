@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Settings from './pages/Settings';
 import Appearance from './pages/Appearance';
 import HelpSupport from './pages/HelpSupport';
+import InviteJoinPage from './pages/InviteJoinPage';
 
 function App() {
   return (
@@ -29,7 +30,7 @@ function App() {
       <Route path="/settings" element={<Settings/>}/>
       <Route path="/appearance" element={<Appearance/>}/>
       <Route path="/help" element={<HelpSupport/>}/>
-      
+      <Route path="/invite/:code" element={<InviteJoinPage />} />
 
     </Routes>
   </Router>

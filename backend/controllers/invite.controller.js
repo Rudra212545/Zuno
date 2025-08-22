@@ -201,8 +201,19 @@ export const getInviteInfo = async (req, res) => {
 // Use invite to join server
 export const useInvite = async (req, res) => {
   try {
+    console.log('🎯 UseInvite route hit!');
+    console.log('👤 req.user:', req.user); // Debug log
+    
     const { code } = req.params;
+    
+    // ✅ Extra safety check
+    if (!req.user || !req.user._id) {
+      console.log('❌ Authentication failed - no user in request');
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
     const userId = req.user._id;
+    console.log('✅ Authenticated user ID:', userId);
     
     const invite = await Invite.findOne({ code });
     
@@ -210,15 +221,18 @@ export const useInvite = async (req, res) => {
       return res.status(404).json({ message: 'Invite not found' });
     }
     
+    // Check expiration
     if (invite.expiresAt && new Date(invite.expiresAt) <= new Date()) {
       await Invite.findByIdAndDelete(invite._id);
       return res.status(410).json({ message: 'Invite expired' });
     }
     
+    // Check usage limits
     if (invite.maxUses && invite.uses >= invite.maxUses) {
       return res.status(410).json({ message: 'Invite usage limit reached' });
     }
     
+    // Check if user already in server
     const server = await Server.findById(invite.serverId);
     if (server.members.includes(userId)) {
       return res.status(400).json({ message: 'You are already a member of this server' });
@@ -248,19 +262,22 @@ export const useInvite = async (req, res) => {
     invite.uses += 1;
     await invite.save();
     
+    // Delete if max uses reached
     if (invite.maxUses && invite.uses >= invite.maxUses) {
       await Invite.findByIdAndDelete(invite._id);
     }
     
-    console.log(`User ${userId} joined server ${invite.serverId} using invite ${code}`);
+    console.log(`✅ User ${userId} joined server ${invite.serverId} using invite ${code}`);
     
     res.json({
       message: 'Successfully joined server',
       serverId: invite.serverId,
       grantTempMembership: invite.grantTempMembership
     });
+    
   } catch (error) {
-    console.error('Error using invite:', error);
+    console.error('❌ Error using invite:', error);
     res.status(500).json({ message: 'Error joining server' });
   }
 };
+

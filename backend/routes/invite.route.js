@@ -1,4 +1,5 @@
 import express from 'express';
+import { verifyToken } from '../middlewares/auth.js';
 import { 
   getInvites, 
   createInvite, 
@@ -10,11 +11,11 @@ import {
 const router = express.Router();
 
 
-router.get('/server/:serverId/invites', getInvites);    
-router.post('/server/:serverId/invites', createInvite);  
+router.get('/server/:serverId/invites', verifyToken,getInvites);    
+router.post('/server/:serverId/invites',verifyToken, createInvite);  
 // Individual invite routes
 router.delete('/:inviteId', revokeInvite);              
 router.get('/:code/info', getInviteInfo);                
-router.post('/:code/use', useInvite);                
+router.post('/:code/use',verifyToken, useInvite);                
 
 export default router;

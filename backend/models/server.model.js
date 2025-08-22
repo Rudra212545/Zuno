@@ -16,6 +16,13 @@ const serverSchema = new Schema({
       ref: 'Channel',
     }
   ],
+  members: [
+    {
+      type: Types.ObjectId,
+      ref: 'User',
+      default: [] // Default to empty array
+    }
+  ],
   userId: {
     type: Types.ObjectId,
     ref: 'User',
