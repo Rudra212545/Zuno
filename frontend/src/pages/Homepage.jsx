@@ -11,6 +11,7 @@ import ChatArea from "../components/homepage/ChatArea";
 import LogoutModal from "../components/homepage/LogoutModal";
 import AddServerModal from "../components/homepage/AddServerModal";
 import AddChannelForm from "../components/homepage/AddChannelForm";
+import InvitePeopleModal from "../components/homepage/invitePeopleModal";
 
 import socket from "../utils/socket";
 import { sendMessage } from "../api/messageApi";
@@ -345,6 +346,16 @@ function Homepage() {
           userId={user?._id}
           onClose={() => dispatch(set({ key: "showCreateChannelForm", value: false }))}
           onCreate={(newChannel) => dispatch(addChannel(newChannel))}
+        />
+      )}
+
+     
+      {ui.showInvitePeopleModal && (
+        <InvitePeopleModal
+          isOpen={ui.showInvitePeopleModal}
+          onClose={() => dispatch(set({ key: "showInvitePeopleModal", value: false }))}
+          server={selectedServer}
+          user={user}
         />
       )}
     </div>

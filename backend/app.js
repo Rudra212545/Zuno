@@ -24,6 +24,7 @@ import serverRouter from "./routes/server.route.js"
 import channelRouter from "./routes/channel.route.js";
 import messageRouter from "./routes/message.route.js";
 import channelReadRouter from "./routes/channelRead.route.js";
+import inviteRouter from "./routes/invite.route.js";
 
 
 
@@ -34,6 +35,7 @@ app.use("/api/v1/server",serverRouter);
 app.use("/api/v1/channels", channelRouter);
 app.use('/api/v1/messages', messageRouter);
 app.use('/api/v1/channelRead', channelReadRouter);
+app.use('/api/v1/invites',inviteRouter);
 
 
 

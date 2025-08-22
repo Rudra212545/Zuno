@@ -4,7 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Hash, Volume2, Mic, MicOff, Headphones, Headphones as HeadphoneOff, Settings, ChevronDown, Plus, UserPlus, Bell, Shield, LogOut, MoreVertical, Edit3, Trash2, Lock, Users, Volume, VolumeX, Copy, Phone, PhoneOff, Video, VideoOff, Monitor, MonitorOff } from 'lucide-react';
 import { Menu } from '@headlessui/react';
 import { FiCheckCircle, FiClock, FiMinusCircle, FiEyeOff, FiSlash } from "react-icons/fi";
-import AddChannelForm from './AddChannelForm'; // Add this import - adjust path as needed
+import AddChannelForm from './AddChannelForm'; 
+import InvitePeopleModal  from './invitePeopleModal';
+import { useDispatch } from 'react-redux';
+import { set } from '../../store/slices/uiSlice';
 
 const ChannelsSidebar = ({ 
   currentChannel, 
@@ -22,6 +25,7 @@ const ChannelsSidebar = ({
   onOpenCreateChannel
 }) => {
   const navigate = useNavigate(); 
+  const dispatch = useDispatch();
   // Separate text and voice channels from channels prop
   const textChannels = channels.filter(channel => channel.type === 'text');
   const voiceChannels = channels.filter(channel => channel.type === 'voice');
@@ -36,6 +40,7 @@ const ChannelsSidebar = ({
 
   // Add Channel Modal state
   const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const statusDetails = {
     online: { icon: <FiCheckCircle className="text-green-400" /> },
@@ -194,7 +199,11 @@ const ChannelsSidebar = ({
                                 ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30 scale-[1.02]'
                                 : 'text-gray-300 hover:bg-white/10'
                             } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 relative overflow-hidden`}
-                            onClick={() => console.log(`Invite to ${channel.name}`)}
+                            onClick={() => {
+                            
+                              dispatch(set({ key: "showInvitePeopleModal", value: true }));
+                              
+                            }}
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all duration-300" />
                             <Users size={14} className="mr-3 relative z-10" />
@@ -202,6 +211,7 @@ const ChannelsSidebar = ({
                           </button>
                         )}
                       </Menu.Item>
+                     
                     </div>
   
                     {/* Divider */}
@@ -329,7 +339,7 @@ const ChannelsSidebar = ({
                                   ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/40 scale-[1.02] ring-1 ring-indigo-400/50' 
                                   : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-indigo-500/20'
                               } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                              onClick={handleOpenCreateChannel} // Updated to use new handler
+                              onClick={handleOpenCreateChannel} 
                             >
                               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
                               <div className={`p-2 rounded-lg mr-3 relative z-10 ${
@@ -351,7 +361,11 @@ const ChannelsSidebar = ({
                                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-500/40 scale-[1.02] ring-1 ring-emerald-400/50' 
                                   : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-emerald-500/20'
                               } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                              onClick={() => console.log("Invite People")}
+                              onClick={() => {
+                               
+                                dispatch(set({ key: "showInvitePeopleModal", value: true }));
+                               
+                              }}
                             >
                               <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
                               <div className={`p-2 rounded-lg mr-3 relative z-10 ${
@@ -363,6 +377,7 @@ const ChannelsSidebar = ({
                             </button>
                           )}
                         </Menu.Item>
+                    
 
                         {/* Notification Settings */}
                         <Menu.Item>
@@ -790,4 +805,3 @@ const ChannelsSidebar = ({
 };
 
 export default ChannelsSidebar;
-  

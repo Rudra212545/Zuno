@@ -8,6 +8,7 @@ const initialState = {
   showAddServerModal: false,
   showLogoutConfirm: false,
   showCreateChannelForm: false,
+  showInvitePeopleModal: false,
   isDirectMessagesSelected: true,
   callActive: false,
   callChannelId: null,
