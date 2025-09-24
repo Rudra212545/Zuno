@@ -7,6 +7,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { admin } from "../utils/firebase.js";
 import bcrypt from 'bcrypt';
 import { uploadToCloudinary } from '../utils/upload.js';
+import generateTokens from '../utils/generateTokens.js';
 
 
 const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET;
@@ -107,61 +108,128 @@ export const googleAuthController = asyncHandler(async (req, res, next) => {
   const { idToken } = req.body;
 
   if (!idToken) {
-    throw new ApiError(400, "No ID token provided");
+    throw new ApiError(400, "Firebase ID token is required");
   }
 
   let decodedToken;
   try {
     decodedToken = await admin.auth().verifyIdToken(idToken);
+    console.log("✅ Firebase token verified successfully");
+    console.log("🔍 Decoded token:", decodedToken); // Debug log
   } catch (err) {
-    console.error("Firebase ID Token verification failed:", err);
-    throw new ApiError(401, "Invalid ID token");
+    console.error("❌ Firebase ID Token verification failed:", err);
+    throw new ApiError(401, "Invalid Firebase ID token");
   }
 
-  const { uid, email, name, } = decodedToken;
+  const { 
+    uid: firebaseUid, 
+    email, 
+    name, 
+    picture, // ✅ Make sure to extract picture
+    email_verified 
+  } = decodedToken;
 
-  let user = await User.findOne({ uid });
-
-  if (!user) {
-    user = await User.findOne({ email });
-
-    if (!user) {
-      user = await User.create({
-        googleId: uid,
-        email,
-        username: name.toLowerCase().replace(/\s/g, '') + Math.floor(Math.random() * 10000),
-        isOAuth: true,
-        avatar: {
-          url: decodedToken.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=6366f1`,
-          publicId: null
-        },
-        language: 'en',
-        timezone: 'UTC',
-      });
-      
-    } else {
-      user.uid = uid; // link UID to existing email user
-      await user.save();
-    }
-  }
-
-  const { accessToken, refreshToken } = generateTokens(user);
-  const userResponse = createUserResponse(user);
-
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000
+  console.log("🔍 Extracted data:", {
+    firebaseUid,
+    email,
+    name,
+    picture, // ✅ Log the picture URL
+    email_verified
   });
 
+  // Check if user exists by Firebase UID, Google ID, or email
+  let user = await User.findOne({ 
+    $or: [
+      { firebaseUid: firebaseUid },
+      { googleId: firebaseUid }, // For backwards compatibility
+      { email: email?.toLowerCase() }
+    ]
+  });
+
+  if (user) {
+    console.log("✅ Existing user found:", user._id);
+    
+    // Update Firebase UID if not set
+    if (!user.firebaseUid) {
+      user.firebaseUid = firebaseUid;
+    }
+    
+    // ✅ IMPORTANT: Always update avatar if Google has a picture
+    if (picture && picture !== user.avatar?.url) {
+      console.log("🖼️ Updating avatar from Google:", picture);
+      user.avatar = {
+        url: picture,
+        publicId: user.avatar?.publicId || null // Keep existing publicId if any
+      };
+    }
+    
+    // Update auth provider and verification status
+    user.authProvider = 'firebase';
+    user.isOAuth = true;
+    user.emailVerified = email_verified || true;
+    user.isEmailVerified = email_verified || true;
+    user.lastLogin = new Date();
+    
+    await user.save();
+    console.log("✅ Updated existing user");
+  } else {
+    console.log("🆕 Creating new user");
+    
+    // Generate unique username
+    const baseUsername = name ? name.toLowerCase().replace(/\s/g, '') : email.split('@')[0];
+    const randomSuffix = Math.floor(Math.random() * 10000);
+    const username = `${baseUsername}${randomSuffix}`;
+
+    // ✅ IMPORTANT: Set the avatar properly during user creation
+    const avatarUrl = picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name || email)}&backgroundColor=6366f1`;
+    
+    console.log("🖼️ Setting avatar for new user:", avatarUrl);
+
+    user = new User({
+      username: username,
+      email: email?.toLowerCase(),
+      firebaseUid: firebaseUid,
+      avatar: {
+        url: avatarUrl, // ✅ Use Google picture or fallback
+        publicId: null
+      },
+      emailVerified: email_verified || true,
+      isEmailVerified: email_verified || true,
+      authProvider: 'firebase',
+      isOAuth: true,
+      language: 'en',
+      timezone: 'UTC',
+      lastLogin: new Date()
+    });
+
+    await user.save();
+    console.log("✅ New user created with avatar:", user.avatar.url);
+  }
+
+  // Generate JWT token
+  const accessToken = jwt.sign(
+    { 
+      _id: user._id,
+      email: user.email 
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  // Clean user response
+  const userResponse = createUserResponse(user);
+
+  console.log("✅ Sending response with avatar:", userResponse.avatar?.url);
+
+  // Return response in the format your frontend expects
   res.status(200).json(
     new ApiResponse(200, {
       user: userResponse,
-      accessToken
-    }, "Google sign-in successful")
+      token: accessToken
+    }, "Google authentication successful")
   );
 });
+
 
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;

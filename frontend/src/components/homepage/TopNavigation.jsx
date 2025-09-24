@@ -21,6 +21,33 @@ const TopNavigation = ({
   profileMenuRef,
   handleLogout
 }) => {
+  
+  // ✅ Function to get the profile picture URL with multiple fallback paths
+  const getProfilePictureUrl = () => {
+    // Check all possible paths where the avatar might be stored
+    if (user?.profileImageUrl) {
+      return user.profileImageUrl;
+    }
+    if (user?.user?.avatar?.url) {
+      return user.user.avatar.url;
+    }
+    if (user?.avatar?.url) {
+      return user.avatar.url;
+    }
+    // Fallback to generated avatar
+    const username = user?.username || user?.user?.username || user?.email?.split('@')[0] || 'User';
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(username)}&backgroundColor=6366f1`;
+  };
+
+  const getUserDisplayName = () => {
+    return user?.username || user?.user?.username || user?.email?.split('@')[0] || 'User';
+  };
+
+  // ✅ Check if user has a profile picture (not just the generated one)
+  const hasProfilePicture = () => {
+    return user?.profileImageUrl || user?.user?.avatar?.url || user?.avatar?.url;
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 h-14 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/60 flex items-center justify-between px-4 md:px-6 z-50">
       {/* Background Effects */}
@@ -111,16 +138,33 @@ const TopNavigation = ({
           )}
         </div>
 
-        {/* Profile */}
+        {/* Profile - ✅ Updated to handle Google profile pictures properly */}
         <div className="relative" ref={profileMenuRef}>
-          {user?.profileImageUrl ? (
+          {hasProfilePicture() ? (
             <div className="relative group">
               <img
-                src={user.profileImageUrl}
-                alt={user.name || "Profile"}
-                className="w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer ring-1 ring-gray-500/70 hover:ring-blue-500 ring-offset-1 ring-offset-gray-950 transition duration-300 hover:scale-110 shadow-md animate-pulse hover:animate-none transform"
+                src={getProfilePictureUrl()}
+                alt={getUserDisplayName() || "Profile"}
+                className="w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer ring-1 ring-gray-500/70 hover:ring-blue-500 ring-offset-1 ring-offset-gray-950 transition duration-300 hover:scale-110 shadow-md animate-pulse hover:animate-none transform object-cover"
                 onClick={() => setShowProfileMenu(prev => !prev)}
+                referrerPolicy="no-referrer" // ✅ This is crucial for Google profile pictures!
+                onError={(e) => {
+                  console.warn('Profile image failed to load:', e.target.src);
+                  // Hide the image and show the fallback
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
+              {/* Fallback avatar (hidden by default) */}
+              <div 
+                onClick={() => setShowProfileMenu(prev => !prev)}
+                className="w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer ring-1 ring-gray-500/70 hover:ring-blue-500 ring-offset-1 ring-offset-gray-950 flex items-center justify-center text-white font-medium text-lg md:text-xl uppercase bg-gradient-to-br from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 transition duration-300 hover:scale-110 select-none shadow-md animate-pulse hover:animate-none transform hidden"
+                style={{ display: 'none' }}
+              >
+                <span className="transition duration-300 group-hover:rotate-12">
+                  {getUserDisplayName().charAt(0).toUpperCase()}
+                </span>
+              </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-950 animate-ping"></div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-950"></div>
             </div>
@@ -130,10 +174,10 @@ const TopNavigation = ({
                 onClick={() => setShowProfileMenu(prev => !prev)}
                 className="w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer ring-1 ring-gray-500/70 hover:ring-blue-500 ring-offset-1 ring-offset-gray-950 flex items-center justify-center text-white font-medium text-lg md:text-xl uppercase bg-gradient-to-br from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 transition duration-300 hover:scale-110 select-none shadow-md animate-pulse hover:animate-none transform"
                 aria-label="User placeholder"
-                title={user?.username || "User"}
+                title={getUserDisplayName()}
               >
                 <span className="transition duration-300 group-hover:rotate-12">
-                  {user?.username ? user.username.charAt(0).toUpperCase() : "U"}
+                  {getUserDisplayName().charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-950 animate-ping"></div>

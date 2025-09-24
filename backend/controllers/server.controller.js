@@ -18,12 +18,15 @@ export const createServer = async (req, res) => {
     const userId = req.user?._id;
     const file = req.file;
 
+    console.log("🔍 Server creation request:", { name, userId, hasFile: !!file });
+
     if (!name || !userId) {
       return res.status(400).json({ message: 'Server name and user ID are required.' });
     }
 
     let iconUrl = null;
 
+    // Handle server icon upload
     if (file) {
       try {
         const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
@@ -32,29 +35,75 @@ export const createServer = async (req, res) => {
           public_id: `icon_${uuidv4()}`,
         });
         iconUrl = result.secure_url;
+        console.log("✅ Server icon uploaded:", iconUrl);
       } catch (uploadError) {
         console.error('Cloudinary upload error:', uploadError);
       }
     } else {
       const encodedName = encodeURIComponent(name);
       iconUrl = `https://ui-avatars.com/api/?name=${encodedName}&background=6366F1&color=fff&bold=true`;
+      console.log("✅ Generated server icon:", iconUrl);
     }
 
-    const generalText = new Channel({ name: 'general', type: 'text', isPrivate: false });
-    const generalVoice = new Channel({ name: 'general', type: 'voice', isPrivate: false });
-
-    await generalText.save();
-    await generalVoice.save();
-
+    // ✅ Create the server first
     const server = new Server({
       name,
       iconUrl: iconUrl,
       userId,
       members: [userId],
-      channels: [generalText._id, generalVoice._id],
+      channels: [], // Will be populated after creating channels
     });
 
-    await server.save();
+    const savedServer = await server.save();
+    console.log("✅ Server created:", savedServer._id);
+
+    // ✅ Create default channels with ALL required fields
+    const generalText = new Channel({ 
+      name: 'general', 
+      type: 'text', 
+      server: savedServer._id,  // ✅ Required: Link to server
+      createdBy: userId,        // ✅ Required: Creator
+      isPrivate: false,
+      description: 'General discussion',
+      members: [userId],        // Add creator as member
+      permissions: {
+        everyone: {
+          view: true,
+          send: true,
+          read: true
+        }
+      }
+    });
+
+    const generalVoice = new Channel({ 
+      name: 'General Voice', 
+      type: 'voice', 
+      server: savedServer._id,  // ✅ Required: Link to server
+      createdBy: userId,        // ✅ Required: Creator
+      isPrivate: false,
+      description: 'General voice chat',
+      members: [userId],        // Add creator as member
+      permissions: {
+        everyone: {
+          view: true,
+          send: true,
+          read: true
+        }
+      }
+    });
+
+    // Save channels
+    const savedTextChannel = await generalText.save();
+    const savedVoiceChannel = await generalVoice.save();
+
+    console.log("✅ Channels created:", {
+      text: savedTextChannel._id,
+      voice: savedVoiceChannel._id
+    });
+
+    // ✅ Update server with channel IDs
+    savedServer.channels = [savedTextChannel._id, savedVoiceChannel._id];
+    await savedServer.save();
 
     // Update user document to add this server
     await User.findByIdAndUpdate(
@@ -62,7 +111,7 @@ export const createServer = async (req, res) => {
       {
         $push: {
           servers: {
-            server: server._id,
+            server: savedServer._id,
             role: 'owner',
             joinedAt: new Date()
           }
@@ -71,23 +120,78 @@ export const createServer = async (req, res) => {
       { new: true }
     );
 
-    res.status(201).json({ message: 'Server created successfully.', server });
+    console.log("✅ User updated with new server");
+
+    // Return populated server data
+    const populatedServer = await Server.findById(savedServer._id)
+      .populate('channels')
+      .populate('members', 'username email avatar');
+
+    res.status(201).json({ 
+      message: 'Server created successfully.', 
+      server: populatedServer 
+    });
+
   } catch (error) {
-    console.error('Server creation failed:', error);
-    res.status(500).json({ message: 'Internal server error.' });
+    console.error('❌ Server creation failed:', error);
+    
+    // Enhanced error handling
+    if (error.name === 'ValidationError') {
+      const validationErrors = {};
+      Object.keys(error.errors).forEach(key => {
+        validationErrors[key] = error.errors[key].message;
+      });
+      
+      console.log("❌ Validation errors:", validationErrors);
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors: validationErrors 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Internal server error.',
+      error: error.message 
+    });
   }
 };
-
 
 export const getAllServers = async (req, res) => {
   try {
-    const servers = await Server.find({ userId: req.user._id });
+    const userId = req.user._id;
+    
+    console.log('🔍 GET SERVERS REQUEST:', {
+      userId: userId.toString(),
+      username: req.user.username
+    });
+
+    // Find servers where user is owner OR member
+    const servers = await Server.find({
+      $or: [
+        { userId: userId }, // User created the server (owner)
+        { members: userId } // User is a member
+      ]
+    })
+    .populate('channels')
+    .populate('members', 'username avatar email')
+    .sort({ createdAt: -1 });
+
+    console.log('✅ SERVERS FOUND:', servers.length);
+    
+    servers.forEach((server, index) => {
+      console.log(`  ${index + 1}. "${server.name}" - Owner: ${server.userId}, Members: ${server.members.length}`);
+      console.log(`     Server ID: ${server._id}`);
+      console.log(`     Is User Owner: ${server.userId.toString() === userId.toString()}`);
+      console.log(`     Is User Member: ${server.members.some(m => m._id.toString() === userId.toString())}`);
+    });
+
     res.json(servers);
   } catch (error) {
-    console.error("Error fetching servers:", error);
+    console.error("❌ Error fetching servers:", error);
     res.status(500).json({ message: "Failed to fetch servers" });
   }
 };
+
 
 export const getServerInfo = async(req,res)=>{
   try {

@@ -79,31 +79,50 @@ const SignupPage = () => {
     }
   };
 
-  const handleGoogleSignUp = async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const idToken = await user.getIdToken();
+const handleGoogleSignUp = async () => {
+  try {
+    console.log("🔄 Starting Google Sign-In...");
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    const idToken = await user.getIdToken();
+    
+    console.log("🔄 Sending to backend...");
+    const response = await axios.post(
+      "http://localhost:3000/api/v1/users/google-auth",
+      { idToken },
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-      const response = await axios.post(
-        "http://localhost:3000/api/v1/users/google-auth",
-        { idToken },
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      console.log("Google signup/login successful:", response.data);
+    console.log("✅ Backend response:", response.data);
+    
+    if (response.data.success) {
+      localStorage.setItem('token', response.data.data.token);
+      console.log("✅ Google signup/login successful");
       navigate("/home");
-      return response.data;
-    } catch (error) {
-      console.error("Google Sign-In error:", error);
-      alert(error.response?.data?.message || error.message);
     }
-  };
+  } catch (error) {
+    console.error("❌ Google Sign-In error details:", {
+      message: error.message,
+      code: error.code,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    
+    if (error.response) {
+      alert(error.response.data.message || "Server error during authentication");
+    } else if (error.code) {
+      alert(`Authentication failed: ${error.message}`);
+    } else {
+      alert("Network error. Please try again.");
+    }
+  }
+};
+
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#0f0f1c] via-[#1c1c2e] to-[#2e2e3e] relative overflow-hidden">

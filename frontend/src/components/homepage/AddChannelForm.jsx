@@ -16,34 +16,59 @@ const AddChannelForm = ({ serverId, userId, onClose, onCreate }) => {
     if (!type) {
       return setError('Channel type is required');
     }
+    if (!serverId) {
+      return setError('Server ID is required');
+    }
   
     try {
       setIsLoading(true);
+      setError(''); // Clear previous errors
   
       const payload = {
-        name,
+        name: name.trim(),
         type,
-        createdBy: userId,
+        createdBy: userId, // ✅ Keep this as your backend expects it
       };
   
-      const token = localStorage.getItem('token'); // adjust based on your auth setup
+      const token = localStorage.getItem('token');
+
+      console.log('🔄 Creating channel:', payload);
+      console.log('🔄 Server ID:', serverId);
   
-      const res = await axios.post(
-        `http://localhost:3000/api/v1/channels/create/${serverId}`,
+      // ✅ Use YOUR actual API endpoint
+      const response = await axios.post(
+        `http://localhost:3000/api/v1/channels/create/${serverId}`, // ✅ Your correct endpoint
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Optional, if auth is needed
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         }
       );
-  
-      if (onCreate) onCreate(res.data); // you can refetch channels too
+
+      console.log('✅ Channel created successfully:', response.data);
+
+      // ✅ Call onCreate with the response data
+      if (onCreate) {
+        // Check what structure your backend returns and adjust accordingly
+        const channelData = response.data.data || response.data.channel || response.data;
+        onCreate(channelData);
+      }
+
+      // Reset form and close modal
+      setName('');
+      setType('text');
+      setError('');
       onClose();
-      setIsLoading(false);
+
     } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || 'Something went wrong');
+      console.error('❌ Error creating channel:', err);
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.errors || 
+                          'Something went wrong';
+      setError(errorMessage);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -70,7 +95,7 @@ const AddChannelForm = ({ serverId, userId, onClose, onCreate }) => {
           </button>
         </div>
 
-        <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Channel Name Input */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-slate-300 uppercase tracking-wide">
@@ -83,6 +108,8 @@ const AddChannelForm = ({ serverId, userId, onClose, onCreate }) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full p-4 rounded-xl bg-slate-800/50 border border-slate-600/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-200 text-white placeholder-slate-400 backdrop-blur-sm"
+                disabled={isLoading}
+                required
               />
               <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 pointer-events-none opacity-0 focus-within:opacity-100 transition-opacity duration-200"></div>
             </div>
@@ -98,11 +125,12 @@ const AddChannelForm = ({ serverId, userId, onClose, onCreate }) => {
               <button
                 type="button"
                 onClick={() => setType('text')}
+                disabled={isLoading}
                 className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group ${
                   type === 'text'
                     ? 'border-indigo-500 bg-indigo-500/20 shadow-lg shadow-indigo-500/25'
                     : 'border-slate-600/50 bg-slate-800/30 hover:border-slate-500 hover:bg-slate-800/50'
-                }`}
+                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className={`p-3 rounded-lg transition-colors duration-200 ${
                   type === 'text'
@@ -123,11 +151,12 @@ const AddChannelForm = ({ serverId, userId, onClose, onCreate }) => {
               <button
                 type="button"
                 onClick={() => setType('voice')}
+                disabled={isLoading}
                 className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group ${
                   type === 'voice'
                     ? 'border-green-500 bg-green-500/20 shadow-lg shadow-green-500/25'
                     : 'border-slate-600/50 bg-slate-800/30 hover:border-slate-500 hover:bg-slate-800/50'
-                }`}
+                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className={`p-3 rounded-lg transition-colors duration-200 ${
                   type === 'voice'
@@ -149,8 +178,8 @@ const AddChannelForm = ({ serverId, userId, onClose, onCreate }) => {
           {/* Error Message */}
           {error && (
             <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm flex items-center gap-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              {error}
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              {typeof error === 'object' ? JSON.stringify(error) : error}
             </div>
           )}
 
@@ -166,9 +195,8 @@ const AddChannelForm = ({ serverId, userId, onClose, onCreate }) => {
             </button>
             <button
               type="submit"
-              onClick={handleSubmit}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-              disabled={isLoading}
+              disabled={isLoading || !name.trim()}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
@@ -180,7 +208,7 @@ const AddChannelForm = ({ serverId, userId, onClose, onCreate }) => {
               )}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

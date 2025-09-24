@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Hash, Volume2, Mic, MicOff, Headphones, Headphones as HeadphoneOff, Settings, ChevronDown, Plus, UserPlus, Bell, Shield, LogOut, MoreVertical, Edit3, Trash2, Lock, Users, Volume, VolumeX, Copy, Phone, PhoneOff, Video, VideoOff, Monitor, MonitorOff } from 'lucide-react';
 import { Menu } from '@headlessui/react';
 import { FiCheckCircle, FiClock, FiMinusCircle, FiEyeOff, FiSlash } from "react-icons/fi";
-import AddChannelForm from './AddChannelForm'; 
 import InvitePeopleModal  from './invitePeopleModal';
 import { useDispatch } from 'react-redux';
 import { set } from '../../store/slices/uiSlice';
+import { addChannel } from '../../store/slices/channelSlice';
 
 const ChannelsSidebar = ({ 
   currentChannel, 
@@ -39,7 +39,6 @@ const ChannelsSidebar = ({
   const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   // Add Channel Modal state
-  const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
 
   const statusDetails = {
@@ -64,22 +63,8 @@ const ChannelsSidebar = ({
     setIsScreenSharing(false);
   };
 
-  // Handler to open create channel modal (used by both + buttons and menu item)
-  const handleOpenCreateChannel = () => {
-    setShowCreateChannelModal(true);
-  };
 
-  // Handler for when channel is created
-  const handleChannelCreated = (newChannel) => {
-    console.log('New channel created:', newChannel);
-    setShowCreateChannelModal(false);
-    
-    // Optionally set as current channel
-    if (newChannel) {
-      setCurrentChannel(newChannel.name);
-      setCurrentChannelId(newChannel._id || newChannel.id);
-    }
-  };
+  
 
   // Channel Settings Dropdown Component with Portal
   const ChannelSettingsDropdown = ({ channel, isVoiceChannel = false }) => {
@@ -339,7 +324,7 @@ const ChannelsSidebar = ({
                                   ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/40 scale-[1.02] ring-1 ring-indigo-400/50' 
                                   : 'text-gray-300 hover:bg-white/10 border border-transparent hover:border-indigo-500/20'
                               } group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 hover:shadow-lg backdrop-blur-sm relative overflow-hidden`}
-                              onClick={handleOpenCreateChannel} 
+                              onClick={() => dispatch(set({ key: "showCreateChannelForm", value: true }))}
                             >
                               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
                               <div className={`p-2 rounded-lg mr-3 relative z-10 ${
@@ -521,7 +506,7 @@ const ChannelsSidebar = ({
             Text Channels
             <div className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full opacity-60" />
           </span>
-          <Plus size={16} onClick={handleOpenCreateChannel} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
+          <Plus size={16} onClick={() => dispatch(set({ key: "showCreateChannelForm", value: true }))} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
         </div>
         {textChannels.map((channel) => (
           <div
@@ -564,7 +549,7 @@ const ChannelsSidebar = ({
             Voice Channels
             <div className="absolute -bottom-1 left-0 w-14 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full opacity-60" />
           </span>
-          <Plus size={16} onClick={handleOpenCreateChannel} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
+        <Plus size={16} onClick={() => dispatch(set({ key: "showCreateChannelForm", value: true }))} className="text-gray-400 cursor-pointer hover:text-white transition-all duration-300 hover:rotate-90 hover:scale-110 hover:drop-shadow-lg" />
         </div>
         {voiceChannels.map((channel) => (
           <div key={channel._id || channel.id} className="mx-3 relative">
@@ -791,15 +776,7 @@ const ChannelsSidebar = ({
 
       </div>
 
-      {/* Add Channel Modal - triggered by both + buttons and menu item */}
-      {showCreateChannelModal && (
-        <AddChannelForm
-          serverId={selectedServer?._id || selectedServer?.id}
-          userId={user?._id || user?.id}
-          onClose={() => setShowCreateChannelModal(false)}
-          onCreate={handleChannelCreated}
-        />
-      )}
+     
     </div>
   );
 };

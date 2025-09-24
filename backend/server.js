@@ -1,34 +1,26 @@
 import dotenv from "dotenv";
 import { createServer } from "http";
-import { Server } from "socket.io";
 import connectDB from "./db/db.js";
 import { app } from "./app.js";
-import{initChatSocket} from"./utils/socket.js"
+import { initChatSocket } from "./utils/socket.js";
 
 dotenv.config({
-  path: './.env' // make sure the path is correct, usually './.env'
+  path: './.env'
 });
 
 const httpServer = createServer(app);
 
-const io = new Server(httpServer, {
-  cors: {
-    origin: 'http://localhost:5173',
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
-
-io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
-  initChatSocket(io, socket);
-});
+// ✅ CRITICAL: Initialize socket server BEFORE connections
+console.log('🔄 Setting up socket server...');
+const io = initChatSocket(httpServer);
+console.log('✅ Socket server initialized');
 
 connectDB()
   .then(() => {
-    const PORT = process.env.PORT || 8000;
+    const PORT = process.env.PORT || 3000; // Keep your port as 3000
     httpServer.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log('🔌 Socket server ready for connections');
     });
   })
   .catch((err) => {

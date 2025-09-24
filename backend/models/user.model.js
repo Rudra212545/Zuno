@@ -22,16 +22,34 @@ const userSchema = new mongoose.Schema({
     match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   },
   password: {
-    type: String,
-    required: function () {
-      return !this.googleId; // Password is required only if googleId is NOT present
-    },
-    minlength: 6
+  type: String,
+  required: function () {
+    return !this.googleId && !this.firebaseUid && this.authProvider === 'local'; // Updated condition
   },
+  minlength: 6
+},
   googleId: {
     type: String,
     default: null
   },
+  firebaseUid: {  // ADD THIS NEW FIELD
+  type: String,
+  unique: true,
+  sparse: true // Allows multiple null values
+},
+authProvider: {  // ADD THIS NEW FIELD
+  type: String,
+  enum: ['local', 'google', 'firebase'],
+  default: 'local'
+},
+isOAuth: {  // ADD THIS NEW FIELD  
+  type: Boolean,
+  default: false
+},
+lastLogin: {  // ADD THIS NEW FIELD
+  type: Date,
+  default: null
+},
 
   // Profile Information
   avatar: {
@@ -79,6 +97,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isEmailVerified: {  // ADD THIS ALIAS
+  type: Boolean,
+  default: false
+},
   phoneNumber: {
     type: String,
     default: null
@@ -358,6 +380,12 @@ userSchema.index({ 'servers.server': 1 });
 userSchema.index({ isOnline: 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ createdAt: -1 });
+userSchema.index({ firebaseUid: 1 });
+userSchema.index({ googleId: 1 });
+userSchema.index({ authProvider: 1 });
+userSchema.index({ isOAuth: 1 });
+userSchema.index({ email: 1, firebaseUid: 1 }); // Compound index for faster queries
+userSchema.index({ email: 1, googleId: 1 }); // Compound index for backwards compatibility
 
 // Virtual for accepted friend count
 userSchema.virtual('friendCount').get(function () {

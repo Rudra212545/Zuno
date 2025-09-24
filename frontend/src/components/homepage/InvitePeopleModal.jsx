@@ -6,7 +6,7 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
   const [inviteLink, setInviteLink] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [error,setError] = useState("");
+  const [error, setError] = useState("");
   const [inviteSettings, setInviteSettings] = useState({
     expiresAfter: '7days',
     maxUses: 'unlimited',
@@ -15,32 +15,43 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
   const [existingInvites, setExistingInvites] = useState([]);
   const linkInputRef = useRef(null);
 
+  // Convert expiry setting to seconds
+  const getExpiryInSeconds = (expiresAfter) => {
+    const expiryMap = {
+      '30min': 30 * 60,
+      '1hour': 60 * 60,
+      '6hours': 6 * 60 * 60,
+      '12hours': 12 * 60 * 60,
+      '1day': 24 * 60 * 60,
+      '7days': 7 * 24 * 60 * 60,
+      '30days': 30 * 24 * 60 * 60,
+      'never': null
+    };
+    return expiryMap[expiresAfter];
+  };
+
   // Generate new invite link
   const generateInviteLink = async () => {
     setIsGenerating(true);
-    setError(''); 
+    setError('');
 
- // 🔍 DEBUG: Check what user object contains
- console.log('🧑‍💻 User object:', user);
- console.log('🆔 User.user._id:', user?.user?._id);
- console.log('🆔 User.user.id:', user?.user?.id);
+    console.log('🧑‍💻 User object:', user);
+    console.log('🏢 Server object:', server);
 
     try {
       const token = localStorage.getItem('token');
-      const userId = user?.user?._id || user?.user?.id;
       
-      // Build the payload - ensure no duplicated fields
+      // Build the payload
       const payload = {
-        createdBy: userId,
-        expiresAfter: inviteSettings.expiresAfter,
         maxUses: inviteSettings.maxUses === 'unlimited' ? null : parseInt(inviteSettings.maxUses, 10),
-        grantTempMembership: inviteSettings.grantTempMembership
+        expiresIn: getExpiryInSeconds(inviteSettings.expiresAfter) // Convert to seconds
       };
       
-      console.log('📤 Sending payload:', payload); // Debug log
+      console.log('📤 Sending payload:', payload);
       
+      // ✅ Use the correct API endpoint from your backend
       const response = await axios.post(
-        `http://localhost:3000/api/v1/invites/server/${server._id}/invites`,
+        `http://localhost:3000/api/v1/invite/${server._id}`, // Fixed endpoint
         payload,
         {
           headers: {
@@ -50,49 +61,56 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
         }
       );
       
-      setInviteLink(`${window.location.origin}/invite/${response.data.code}`);
-      fetchExistingInvites(); // Refresh the list
-    } catch (error) {
-      console.error('Error generating invite:', error);
+      console.log('✅ Invite response:', response.data);
       
-      // Improved error handling
+      // Extract invite code from response
+      const inviteCode = response.data.invite?.code || response.data.data?.invite?.code;
+      if (inviteCode) {
+        setInviteLink(`${window.location.origin}/invite/${inviteCode}`);
+        fetchExistingInvites(); // Refresh the list
+      } else {
+        setError('Failed to get invite code from server response');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error generating invite:', error);
+      
       let errorMessage = 'Something went wrong';
       
       if (error.response) {
-        // Server responded with an error status
         errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
-        console.error('Server error:', error.response.data);
+        console.error('Server error details:', error.response.data);
       } else if (error.request) {
-        // Request was made but no response received
         errorMessage = 'No response from server. Please check your connection.';
-        console.error('Network error:', error.request);
       } else {
-        // Something else happened
         errorMessage = error.message || 'Unknown error occurred';
-        console.error('Unknown error:', error.message);
       }
       
-      setError(errorMessage); // Show error to user
+      setError(errorMessage);
     } finally {
       setIsGenerating(false);
     }
   };
+
   // Fetch existing invites
   const fetchExistingInvites = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      // ✅ Use the correct API endpoint
       const response = await axios.get(
-        `http://localhost:3000/api/v1/invites/server/${server._id}/invites`,
+        `http://localhost:3000/api/v1/invite/server/${server._id}`, // Fixed endpoint
         {
           headers: {
             Authorization: `Bearer ${token}`
           }
         }
       );
-      setExistingInvites(response.data);
+      
+      console.log('📋 Existing invites:', response.data);
+      setExistingInvites(response.data.invites || response.data.data?.invites || []);
     } catch (error) {
-      console.error('Error fetching invites:', error);
-      // Optionally show error for fetching invites too
+      console.error('❌ Error fetching invites:', error);
       if (error.response?.status !== 404) {
         setError('Failed to fetch existing invites');
       }
@@ -115,26 +133,32 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
   };
 
   // Revoke invite
-  const revokeInvite = async (inviteId) => {
+  const revokeInvite = async (inviteCode) => {
     try {
       const token = localStorage.getItem('token');
+      
+      // ✅ Use the correct API endpoint
       await axios.delete(
-        `http://localhost:3000/api/v1/invites/${inviteId}`,
+        `http://localhost:3000/api/v1/invite/${inviteCode}`, // Fixed endpoint
         {
           headers: {
             Authorization: `Bearer ${token}`
           }
         }
       );
+      
       fetchExistingInvites(); // Refresh the list
+      console.log('✅ Invite revoked:', inviteCode);
     } catch (error) {
-      console.error('Error revoking invite:', error);
+      console.error('❌ Error revoking invite:', error);
+      setError('Failed to revoke invite');
     }
   };
 
   // Load existing invites when modal opens
   React.useEffect(() => {
     if (isOpen) {
+      console.log('🔄 Modal opened, fetching existing invites');
       fetchExistingInvites();
     }
   }, [isOpen]);
@@ -155,7 +179,9 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
                   Invite People
                 </h2>
-                <p className="text-slate-400 text-sm mt-1">Invite friends to join <span className="font-semibold text-slate-300">{server?.name}</span></p>
+                <p className="text-slate-400 text-sm mt-1">
+                  Invite friends to join <span className="font-semibold text-slate-300">{server?.name}</span>
+                </p>
               </div>
             </div>
             <button
@@ -168,7 +194,21 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
           </div>
         </div>
 
-        {/* Main Content - Horizontal Layout */}
+        {/* Error Display */}
+        {error && (
+          <div className="mx-8 mt-6 p-4 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm flex items-center gap-2">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            {error}
+            <button 
+              onClick={() => setError('')}
+              className="ml-auto text-red-400 hover:text-red-300"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* Main Content */}
         <div className="p-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
@@ -223,7 +263,6 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
                         )}
                       </button>
                     </div>
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 pointer-events-none opacity-0 focus-within:opacity-100 transition-opacity duration-200"></div>
                   </div>
                 ) : (
                   <div className="p-8 rounded-xl bg-slate-800/30 border border-slate-600/30 text-center">
@@ -267,7 +306,7 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
                           </div>
                         </div>
                         <button
-                          onClick={() => revokeInvite(invite._id)}
+                          onClick={() => revokeInvite(invite.code)} // Use code instead of _id
                           className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-red-500/15 font-medium flex items-center gap-1"
                         >
                           <Trash2 size={14} />
@@ -291,57 +330,42 @@ const InvitePeopleModal = ({ isOpen, onClose, server, user }) => {
                 {/* Expiration */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-slate-400">Expire after</label>
-                  <div className="relative">
-                    <select
-                      value={inviteSettings.expiresAfter}
-                      onChange={(e) => setInviteSettings(prev => ({ ...prev, expiresAfter: e.target.value }))}
-                      className="w-full p-3 rounded-xl bg-slate-800/50 border border-slate-600/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all duration-200 text-white text-sm"
-                    >
-                      <option value="30min">30 minutes</option>
-                      <option value="1hour">1 hour</option>
-                      <option value="6hours">6 hours</option>
-                      <option value="12hours">12 hours</option>
-                      <option value="1day">1 day</option>
-                      <option value="7days">7 days</option>
-                      <option value="30days">30 days</option>
-                      <option value="never">Never</option>
-                    </select>
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 pointer-events-none opacity-0 focus-within:opacity-100 transition-opacity duration-200"></div>
-                  </div>
+                  <select
+                    value={inviteSettings.expiresAfter}
+                    onChange={(e) => setInviteSettings(prev => ({ ...prev, expiresAfter: e.target.value }))}
+                    className="w-full p-3 rounded-xl bg-slate-800/50 border border-slate-600/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all duration-200 text-white text-sm"
+                  >
+                    <option value="30min">30 minutes</option>
+                    <option value="1hour">1 hour</option>
+                    <option value="6hours">6 hours</option>
+                    <option value="12hours">12 hours</option>
+                    <option value="1day">1 day</option>
+                    <option value="7days">7 days</option>
+                    <option value="30days">30 days</option>
+                    <option value="never">Never</option>
+                  </select>
                 </div>
 
                 {/* Max Uses */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-slate-400">Max uses</label>
-                  <div className="relative">
-                    <select
-                      value={inviteSettings.maxUses}
-                      onChange={(e) => setInviteSettings(prev => ({ ...prev, maxUses: e.target.value }))}
-                      className="w-full p-3 rounded-xl bg-slate-800/50 border border-slate-600/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all duration-200 text-white text-sm"
-                    >
-                      <option value="1">1 use</option>
-                      <option value="5">5 uses</option>
-                      <option value="10">10 uses</option>
-                      <option value="25">25 uses</option>
-                      <option value="50">50 uses</option>
-                      <option value="100">100 uses</option>
-                      <option value="unlimited">No limit</option>
-                    </select>
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 pointer-events-none opacity-0 focus-within:opacity-100 transition-opacity duration-200"></div>
-                  </div>
+                  <select
+                    value={inviteSettings.maxUses}
+                    onChange={(e) => setInviteSettings(prev => ({ ...prev, maxUses: e.target.value }))}
+                    className="w-full p-3 rounded-xl bg-slate-800/50 border border-slate-600/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all duration-200 text-white text-sm"
+                  >
+                    <option value="1">1 use</option>
+                    <option value="5">5 uses</option>
+                    <option value="10">10 uses</option>
+                    <option value="25">25 uses</option>
+                    <option value="50">50 uses</option>
+                    <option value="100">100 uses</option>
+                    <option value="unlimited">No limit</option>
+                  </select>
                 </div>
-
-              
               </div>
             </div>
           </div>
-          {error && (
-  <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm flex items-center gap-2">
-    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-    {error}
-  </div>
-)}   
-              
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-8 border-t border-slate-700/50 mt-8">

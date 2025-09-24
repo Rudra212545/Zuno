@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from 'react-router-dom';
 
 import TopNavigation from "../components/homepage/TopNavigation";
 import MobileMenus from "../components/homepage/MobileMenus";
@@ -12,8 +13,9 @@ import LogoutModal from "../components/homepage/LogoutModal";
 import AddServerModal from "../components/homepage/AddServerModal";
 import AddChannelForm from "../components/homepage/AddChannelForm";
 import InvitePeopleModal from "../components/homepage/invitePeopleModal";
+import OnlineUsers from "../components/homepage/OnlineUsers";
 
-import socket from "../utils/socket";
+import socketService from '../utils/socket';
 import { sendMessage } from "../api/messageApi";
 
 // Redux slices
@@ -26,6 +28,11 @@ import { set } from "../store/slices/uiSlice";
 function Homepage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
+
+
+  const [channelUsers, setChannelUsers] = useState([]);
+  const [showOnlineUsers, setShowOnlineUsers] = useState(false);
 
   // Redux state selectors
   const {
@@ -56,11 +63,11 @@ function Homepage() {
   const mobileMenuRef = useRef(null);
   const logoutConfirmRef = useRef(null);
 
-  // Sample notifications (replace with real)
+  // Sample notifications
   const notifications = [
     {
       id: 1,
-      type: "friend_request",
+      type: "friend_request", 
       user: "Alex_Developer",
       avatar: "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg",
       message: "sent you a friend request",
@@ -69,6 +76,140 @@ function Homepage() {
     },
   ];
   const unreadNotifications = notifications.filter((n) => n.unread).length;
+
+  // ✅ FIXED: Single unified socket setup
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token || !user) return;
+
+    console.log('🔄 Setting up socket connection for:', user.username);
+    
+    const socket = socketService.connect();
+    
+    if (socket) {
+      // ✅ FIXED: Enhanced message listener
+    socketService.onMessage((messageData) => {
+      console.log('📨 RAW MESSAGE RECEIVED from socket:', messageData);
+      
+      const normalizedMessage = {
+        _id: messageData._id,
+        content: messageData.message || messageData.content,
+        message: messageData.message || messageData.content,
+        channelId: messageData.channelId,
+        channel: { _id: messageData.channelId },
+        author: messageData.author,
+        sender: messageData.sender || messageData.author,
+        createdAt: messageData.createdAt,
+        timestamp: messageData.timestamp || messageData.createdAt
+      };
+      
+      console.log('✅ NORMALIZED MESSAGE for Redux:', normalizedMessage);
+      dispatch(addMessage(normalizedMessage));
+    });
+
+
+        // ✅ FIXED: Recent messages listener with proper debugging
+    socketService.onRecentMessages((data) => {
+      console.log('📜 RECENT MESSAGES RAW DATA:', data);
+      
+      // Check the structure of the received data
+      if (data && typeof data === 'object') {
+        console.log('📜 Recent messages structure:', {
+          hasChannelId: !!data.channelId,
+          hasMessages: !!data.messages,
+          messagesType: Array.isArray(data.messages),
+          messagesCount: data.messages ? data.messages.length : 0,
+          currentChannelId: currentChannelId
+        });
+        
+        const { channelId, messages } = data;
+        
+        if (!messages || !Array.isArray(messages)) {
+          console.log('❌ Invalid messages array received:', messages);
+          return;
+        }
+        
+        if (channelId !== currentChannelId) {
+          console.log('❌ Channel mismatch:', {
+            received: channelId,
+            current: currentChannelId
+          });
+          return;
+        }
+        
+        // ✅ Normalize all recent messages
+        console.log('🔄 Normalizing', messages.length, 'recent messages...');
+        const normalizedMessages = messages.map((msg, index) => {
+          const normalized = {
+            _id: msg._id,
+            content: msg.content || msg.message,
+            message: msg.content || msg.message,
+            channelId: msg.channelId || channelId,
+            channel: { _id: msg.channelId || channelId },
+            author: msg.author,
+            sender: msg.author,
+            createdAt: msg.createdAt,
+            timestamp: msg.createdAt,
+            reactions: msg.reactions || []
+          };
+          
+          if (index < 3) { // Debug first 3 messages
+            console.log(`📋 Recent message ${index + 1}:`, {
+              id: normalized._id,
+              content: normalized.content,
+              author: normalized.author?.username
+            });
+          }
+          
+          return normalized;
+        });
+        
+        console.log('✅ Setting', normalizedMessages.length, 'messages in Redux');
+        dispatch(setMessages(normalizedMessages));
+        
+      } else {
+        console.log('❌ Invalid recent messages data received:', data);
+      }
+    });
+
+
+      // User presence listeners
+      socketService.onUserJoinedChannel((userData) => {
+        console.log('👋 User joined:', userData);
+      });
+
+      socketService.onUserLeftChannel((userData) => {
+        console.log('👋 User left:', userData);
+      });
+
+      // Typing indicators
+      socketService.onUserTyping(({ userId, username, isTyping, channelId }) => {
+        if (channelId === currentChannelId && userId !== user._id) {
+          console.log(`✏️ ${username} ${isTyping ? 'typing' : 'stopped typing'}`);
+        }
+      });
+    }
+
+    // ✅ Proper cleanup
+    return () => {
+      console.log('🔄 Cleaning up socket listeners');
+      if (socketService.socket) {
+        socketService.socket.off('chatMessage');
+        socketService.socket.off('recentMessages');
+        socketService.socket.off('userJoinedChannel');
+        socketService.socket.off('userLeftChannel');
+        socketService.socket.off('userTyping');
+      }
+    };
+  }, [token, user?.username, dispatch, currentChannelId]);
+
+  // ✅ FIXED: Only join channel via socket, no API conflicts
+  useEffect(() => {
+    if (currentChannelId && user && socketService.getConnectionStatus().isConnected) {
+      console.log('🔄 Joining channel:', currentChannelId);
+      socketService.joinTextChannel(currentChannelId);
+    }
+  }, [currentChannelId, user]);
 
   // Fetch user & servers
   useEffect(() => {
@@ -105,56 +246,94 @@ function Homepage() {
     fetchData();
   }, [token, dispatch]);
 
-  // Socket join/leave for messages
+  // Handle forced refresh after joining server
   useEffect(() => {
-    if (!currentChannel) return;
+    const state = location.state;
+    
+    if (state?.justJoined && state?.forceRefresh) {
+      console.log('🎉 User just joined server, forcing UI refresh...');
+      
+      const forceRefreshServers = async () => {
+        try {
+          if (!token) return;
 
-    socket.emit("joinRoom", currentChannel);
+          console.log('🔄 Force refreshing servers...');
+          
+          for (let i = 0; i < 3; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            
+            const serverRes = await axios.get("http://localhost:3000/api/v1/server/", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
 
-    socket.on("receiveMessage", (message) => {
-      dispatch(addMessage(message));
-    });
+            let serversData = [];
+            if (Array.isArray(serverRes.data)) {
+              serversData = serverRes.data;
+            } else if (serverRes.data.data) {
+              serversData = serverRes.data.data;
+            } else if (serverRes.data.servers) {
+              serversData = serverRes.data.servers;
+            }
 
-    return () => {
-      socket.emit("leaveRoom", currentChannel);
-      socket.off("receiveMessage");
-    };
-  }, [currentChannel, dispatch]);
-
-  // Fetch messages when channel changes
-  useEffect(() => {
-    if (!currentChannelId || !selectedServer || !user) return;
-    if (!token) return;
-
-    const fetchMessages = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:3000/api/v1/messages/${currentChannelId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
+            console.log(`🔄 Refresh attempt ${i + 1}:`, serversData.length, 'servers');
+            dispatch(setServers(serversData));
+            
+            if (state.newServerId) {
+              const newServer = serversData.find(s => s._id === state.newServerId);
+              if (newServer) {
+                console.log('✅ Auto-selecting server:', newServer.name);
+                handleSelectServer(newServer);
+                break;
+              }
+            }
           }
-        );
-        dispatch(setMessages(res.data));
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    };
+        } catch (error) {
+          console.error('❌ Error in force refresh:', error);
+        }
+      };
 
-    fetchMessages();
-  }, [currentChannelId, selectedServer, user, token, dispatch]);
+      forceRefreshServers();
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, token, dispatch]);
 
-  // Send message
+  // Enhanced message sending
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!ui.messageInput?.trim()) return;
+    if (!ui.messageInput?.trim() || !currentChannelId) {
+      console.log('❌ Message validation failed:', {
+        hasMessage: !!ui.messageInput?.trim(),
+        hasChannelId: !!currentChannelId,
+        messageInput: ui.messageInput,
+        currentChannelId
+      });
+      return;
+    }
+
+    console.log('🔄 Sending message:', {
+      message: ui.messageInput,
+      channelId: currentChannelId,
+      user: user?.username,
+      socketConnected: socketService.getConnectionStatus().isConnected
+    });
 
     try {
-      const savedMessage = await sendMessage(currentChannelId, ui.messageInput, token);
-      socket.emit("sendMessage", savedMessage);
-      dispatch(addMessage(savedMessage));
+      socketService.sendMessage(currentChannelId, ui.messageInput);
       dispatch(set({ key: "messageInput", value: "" }));
+      console.log('✅ Message sent via socket');
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("❌ Socket send failed:", error);
+      
+      try {
+        console.log('🔄 Trying API fallback...');
+        const savedMessage = await sendMessage(currentChannelId, ui.messageInput, token);
+        dispatch(addMessage(savedMessage));
+        dispatch(set({ key: "messageInput", value: "" }));
+        console.log('✅ Message sent via API fallback');
+      } catch (apiError) {
+        console.error("❌ Both methods failed:", apiError);
+        alert('Failed to send message. Please try again.');
+      }
     }
   };
 
@@ -176,9 +355,13 @@ function Homepage() {
       dispatch(setChannels(channelsRes.data));
 
       if (channelsRes.data.length > 0) {
-        dispatch(setCurrentChannelId(channelsRes.data[0]._id));
+        const firstTextChannel = channelsRes.data.find(ch => ch.type === 'text') || channelsRes.data[0];
+        dispatch(setCurrentChannelId(firstTextChannel._id));
+        dispatch(setCurrentChannel(firstTextChannel.name));
+        console.log('✅ Auto-selected channel:', firstTextChannel.name);
       } else {
         dispatch(setCurrentChannelId(null));
+        dispatch(setCurrentChannel(null));
       }
     } catch (error) {
       console.error("Error fetching channels:", error);
@@ -205,6 +388,7 @@ function Homepage() {
     dispatch(set({ key: "isLoggingOut", value: true }));
 
     setTimeout(() => {
+      socketService.disconnect(); // ✅ Disconnect socket on logout
       dispatch(setUser(null));
       localStorage.clear();
       sessionStorage.clear();
@@ -218,7 +402,7 @@ function Homepage() {
     dispatch(set({ key: "showLogoutConfirm", value: false }));
   };
 
-  // Outside click close
+  // Outside click handling
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
@@ -239,7 +423,7 @@ function Homepage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dispatch]);
 
-  // Responsive reset
+  // Responsive handling
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -256,6 +440,76 @@ function Homepage() {
   const handleCreateServer = (serverData) => {
     dispatch(addServer(serverData));
   };
+
+  const handleCreateChannel = (newChannel) => {
+    console.log('🔄 handleCreateChannel called with:', newChannel);
+    dispatch(addChannel(newChannel));
+    dispatch(set({ key: "showCreateChannelForm", value: false }));
+    
+    if (newChannel && newChannel._id) {
+      dispatch(setCurrentChannelId(newChannel._id));
+      dispatch(setCurrentChannel(newChannel.name));
+    }
+  };
+
+  // Debug channels
+  useEffect(() => {
+    console.log('🔍 Channels updated:', channels?.length || 0);
+  }, [channels]);
+
+  // ✅ Set up channel users listener
+  useEffect(() => {
+    const handleChannelUsers = ({ channelId, users }) => {
+      if (channelId === currentChannelId) {
+        console.log('👥 Channel users updated:', users);
+        setChannelUsers(users);
+      }
+    };
+
+    const handleUserJoined = (userData) => {
+      console.log('👋 User joined channel:', userData);
+      if (userData.channelId === currentChannelId) {
+        setChannelUsers(prev => {
+          const exists = prev.find(u => u.userId === userData.userId);
+          if (!exists) {
+            return [...prev, {
+              userId: userData.userId,
+              username: userData.username,
+              avatar: userData.avatar,
+              isOnline: true
+            }];
+          }
+          return prev;
+        });
+      }
+    };
+
+    const handleUserLeft = (userData) => {
+      console.log('👋 User left channel:', userData);
+      if (userData.channelId === currentChannelId) {
+        setChannelUsers(prev => prev.filter(u => u.userId !== userData.userId));
+      }
+    };
+
+    if (socketService.socket) {
+      socketService.socket.on('channelUsers', handleChannelUsers);
+      socketService.socket.on('userJoinedChannel', handleUserJoined);
+      socketService.socket.on('userLeftChannel', handleUserLeft);
+    }
+
+    return () => {
+      if (socketService.socket) {
+        socketService.socket.off('channelUsers', handleChannelUsers);
+        socketService.socket.off('userJoinedChannel', handleUserJoined);
+        socketService.socket.off('userLeftChannel', handleUserLeft);
+      }
+    };
+  }, [currentChannelId]);
+
+  // Clear channel users when changing channels
+  useEffect(() => {
+    setChannelUsers([]);
+  }, [currentChannelId]);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white overflow-hidden">
@@ -313,7 +567,7 @@ function Homepage() {
         onOpenCreateChannel={() => dispatch(set({ key: "showCreateChannelForm", value: true }))}
       />
 
-      <ChatArea
+    <ChatArea
         currentChannel={currentChannel}
         currentChannelId={currentChannelId}
         messages={messages}
@@ -324,6 +578,13 @@ function Homepage() {
         callActive={ui.callActive}
         callChannelId={ui.callChannelId}
         onEndCall={() => dispatch(set({ key: "callActive", value: false }))}
+      />
+
+      {/* ✅ Online Users Panel */}
+      <OnlineUsers 
+        users={channelUsers}
+        isOpen={showOnlineUsers}
+        onToggle={() => setShowOnlineUsers(!showOnlineUsers)}
       />
 
       <LogoutModal
@@ -345,11 +606,10 @@ function Homepage() {
           serverId={selectedServer?._id}
           userId={user?._id}
           onClose={() => dispatch(set({ key: "showCreateChannelForm", value: false }))}
-          onCreate={(newChannel) => dispatch(addChannel(newChannel))}
+          onCreate={handleCreateChannel}
         />
       )}
 
-     
       {ui.showInvitePeopleModal && (
         <InvitePeopleModal
           isOpen={ui.showInvitePeopleModal}
