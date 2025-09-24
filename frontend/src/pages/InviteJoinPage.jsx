@@ -49,8 +49,12 @@ const InviteJoinPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Navigate to the server
-      navigate(`/servers/${inviteInfo.server.id}`);
+      navigate(`/servers/${inviteInfo.server.id}`, {
+        state: { 
+          justJoined: true,
+          newServerId: inviteInfo.server.id 
+        }
+      });
     } catch (error) {
       console.error('Error joining server:', error);
       setError(error.response?.data?.message || 'Failed to join server. Please try again.');

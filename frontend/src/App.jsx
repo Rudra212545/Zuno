@@ -26,6 +26,13 @@ function App() {
         <Homepage />
       </ProtectedRoute>
       } />
+      
+      <Route path="/servers/:id" element={
+          <ProtectedRoute>
+            <Homepage />
+          </ProtectedRoute>
+        } />
+
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings/>}/>
       <Route path="/appearance" element={<Appearance/>}/>

@@ -40,7 +40,7 @@ const MobileMenus = ({
           {/* Server List */}
           <div className="space-y-2">
             {servers.map((server) => (
-              <div key={server.id} className={`flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 ${server.active ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/30' : 'hover:bg-gray-700/30'}`}>
+              <div  key={server._id || server.id || server.name} className={`flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 ${server.active ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/30' : 'hover:bg-gray-700/30'}`}>
                 <span className="text-xl mr-3">{server.icon}</span>
                 <span className="text-white font-medium flex-1">{server.name}</span>
                 {server.notifications > 0 && (
@@ -86,7 +86,7 @@ const MobileMenus = ({
             <div className="space-y-1">
               {textChannels.map((channel) => (
                 <div
-                  key={channel.id}
+                key={channel._id || channel.id}
                   onClick={() => {
                     setCurrentChannel(channel.name);
                     setShowChannels(false);
@@ -116,7 +116,7 @@ const MobileMenus = ({
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Voice Channels</h3>
             <div className="space-y-1">
               {voiceChannels.map((channel) => (
-                <div key={channel.id}>
+                <div   key={channel._id || channel.id}>
                   <div className="flex items-center justify-between p-3 rounded-xl cursor-pointer text-gray-400 hover:bg-gray-700/30 hover:text-gray-200 transition-all duration-200">
                     <div className="flex items-center">
                       <Volume2 size={18} className="mr-3" />
