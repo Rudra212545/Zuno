@@ -21,7 +21,7 @@ export function initChatSocket(server) {
 
   console.log('🔄 Setting up authentication middleware...');
 
-  // ✅ Authentication middleware
+
   io.use(async (socket, next) => {
     console.log('🔍 Socket auth middleware triggered for:', socket.id);
     

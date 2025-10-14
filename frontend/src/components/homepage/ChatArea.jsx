@@ -1,6 +1,6 @@
-// components/homepage/ChatArea.jsx - FIXED VERSION with proper layout
+// components/homepage/ChatArea.jsx - FIXED: Show Chat button removed
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { Hash, Bell, Pin, Users, Smile, Send, Video } from 'lucide-react';
+import { Hash, Bell, Pin, Users, Smile, Send } from 'lucide-react'; // ✅ Removed Video import
 import MessageList from './MessageList';
 import CallUi from './CallUi';
 import TypingIndicator from './TypingIndicator';
@@ -126,10 +126,9 @@ const ChatArea = ({
     }
   }, [currentChannelId, channelMessages.length]);
 
-  // ✅ ENHANCED INPUT BOX with better styling
+  // ✅ Enhanced input box
   const renderInputBox = () => (
     <div className="flex-shrink-0 bg-gradient-to-t from-slate-800/90 to-gray-700/90 backdrop-blur-md border-t border-gray-600/30">
-      {/* ✅ Typing Indicator */}
       <TypingIndicator typingUsers={typingUsers} />
       
       <div className="p-4 md:p-6">
@@ -175,10 +174,10 @@ const ChatArea = ({
     console.log('🔔 New message received while scrolled up:', message);
   };
 
-  // ✅ FIXED LAYOUT STRUCTURE
+  // ✅ MAIN RETURN - Show Chat button completely removed
   return (
     <div className="flex-1 flex flex-col bg-gradient-to-b from-gray-700 to-slate-700 mt-14 min-w-0 max-h-screen overflow-hidden">
-      {/* ✅ Header - Fixed height */}
+      {/* Header */}
       <div className="h-14 md:h-16 px-4 md:px-6 flex items-center justify-between border-b border-gray-600/30 bg-gradient-to-r from-gray-700/80 to-slate-700/80 backdrop-blur-sm shadow-lg flex-shrink-0">
         <div className="flex items-center">
           <Hash size={20} className="md:w-6 md:h-6 text-gray-400 mr-2 md:mr-4" />
@@ -201,15 +200,17 @@ const ChatArea = ({
         </div>
       </div>
 
+      {/* ✅ VOICE CHANNEL LAYOUT - Show Chat button removed */}
       {isVoiceChannel ? (
         <>
-          {callActive && callChannelId === currentChannelId && !showVoiceChat ? (
+          {callActive && callChannelId === currentChannelId ? (
+            // ✅ When in call - show CallUI fullscreen
             <div className="flex-1 min-h-0">
               <CallUi channelId={callChannelId} onEndCall={onEndCall} />
             </div>
           ) : (
+            // ✅ When not in call - show message list and input
             <>
-              {/* ✅ MessageList - Takes remaining space */}
               <div className="flex-1 min-h-0 overflow-hidden">
                 <MessageList 
                   messages={channelMessages} 
@@ -218,27 +219,22 @@ const ChatArea = ({
                 />
               </div>
               
-              {/* ✅ Input Box - Fixed at bottom */}
               {renderInputBox()}
             </>
           )}
 
-          {/* ✅ Voice controls - Fixed at bottom */}
+          {/* ✅ REMOVED: Show Chat button section completely removed */}
+          {/* This entire section has been removed:
           <div className="flex justify-center p-4 bg-gray-800/50 border-t border-gray-600/30 flex-shrink-0">
-            <button
-              onClick={() => setShowVoiceChat(prev => !prev)}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 gap-3"
-            >
-              <Video size={18} />
-              <span className="font-medium">
-                {showVoiceChat ? 'Back to Call' : 'Show Chat'}
-              </span>
+            <button onClick={() => setShowVoiceChat(prev => !prev)}>
+              Show Chat / Back to Call
             </button>
           </div>
+          */}
         </>
       ) : (
+        // ✅ TEXT CHANNEL - Normal chat layout
         <>
-          {/* ✅ TEXT CHANNEL - MessageList takes remaining space */}
           <div className="flex-1 min-h-0 overflow-hidden">
             <MessageList 
               messages={channelMessages} 
@@ -247,7 +243,6 @@ const ChatArea = ({
             />
           </div>
           
-          {/* ✅ Input Box - Always visible at bottom */}
           {renderInputBox()}
         </>
       )}
